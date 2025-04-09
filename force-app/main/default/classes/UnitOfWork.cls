@@ -1,12 +1,26 @@
 public inherited sharing class UnitOfWork implements DmlCommitable {
 
-    // UnitOfWork uow = new UnitOfWork()
-    // ;
-    // uow.registerNew(new Account(Name='Test Account'));
-    // uow.registerNew(new Account(Name='Test Account 2'));
+    /*
+     UnitOfWork uow = new UnitOfWork();
+     uow.registerNew(new Account(Name='Test Account'));
+     uow.registerNew(new Account(Name='Test Account 2'));
+     uow.commitWork();
 
-    // uow.commitWork();
+     uow.registerRelationship(new Account(Name='Test Account'))
+        .withRelationshipField(...)
+        .withExternalIdField(...)
+        .withRelatedRecord(new Account(Name='Test Account 2'));
 
+    uow.registerRelationship(new Account(Name='Test Account'), Account.RelationshipField__c, new Account(Name='Test Account 2'));
+
+    uow.registerRelationship(
+        UOW.Relationship.of(new Account(Name='Test Account'))
+            .withRelationshipField(...)
+            .withExternalIdField(...)
+            .withRelatedRecord(new Account(Name='Test Account 2'))
+    )
+
+    */
     public interface DmlCommitable {
         // Settings
         UnitOfWork systemMode();
@@ -20,6 +34,8 @@ public inherited sharing class UnitOfWork implements DmlCommitable {
         UnitOfWork registerDirty(Iterable<SObject> records);
         // Relationship
         UnitOfWork registerRelationship(SObject targetRecord, SObjectField targetField, SObject relatedRecord);
+        UnitOfWork registerRelationship(SObject targetRecord, SObjectField targetField, SObjectField externalIdField, Object externalId);
+
         // Upsert
         UnitOfWork registerUpsert(SObject record);
         UnitOfWork registerUpsert(Iterable<SObject> records);
@@ -153,6 +169,60 @@ public inherited sharing class UnitOfWork implements DmlCommitable {
     private with sharing class WithSharing implements DmlSharing {
         public void execute(DmlExecutor executor) {
             executor.execute();
+        }
+    }
+
+    private abstract class SObjectUow {
+        public SObject record;
+
+        public virtual void resolve() {}
+        public abstract SObject getRecord();
+    }
+
+    private inherited sharing class PlanSObjectUow extends SObjectUow {
+        private SObject currentRecord;
+
+        public PlanSObjectUow(SObject currentRecord) {
+            this.currentRecord = currentRecord;
+        }
+
+        public override SObject getRecord() {
+            return this.currentRecord;
+        }
+    }
+
+    private inherited sharing class ExternalSObjectUow extends SObjectUow {
+        private SObject currentRecord;
+        private SObjectField relationshipField;
+        private SObjectField externalIdField;
+        private Object externalId;
+
+        public ExternalSObjectUow(SObject record, SObjectField relatedToField, Schema.SObjectField externalIdField, Object externalId) {
+            this.record = record;
+        }
+
+        public override SObject getRecord() {
+            return this.record;
+        }
+    }
+
+    private inherited sharing class RelationshipSObjectUow extends SObjectUow {
+        private SObject currentRecord;
+        private SObject relatedRecord;
+        private SObjectField relationshipField;
+
+        public RelationshipSObjectUow(SObject currentRecord, SObjectField relationshipField, SObject relatedRecord) {
+            this.currentRecord = currentRecord;
+            this.relatedRecord = relatedRecord;
+            this.relationshipField = relationshipField;
+        }
+
+        public override void resolve() {
+            this.currentRecord.put(this.relationshipField, this.relatedTo.Id);
+        }
+
+        public override SObject getRecord() {
+            return this.currentRecord;
         }
     }
 }
