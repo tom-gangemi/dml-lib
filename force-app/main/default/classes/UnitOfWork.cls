@@ -1,30 +1,35 @@
 public inherited sharing class UnitOfWork implements DmlCommitable {
     public interface DmlCommitable {
         // Settings
-        UnitOfWork systemMode();
-        UnitOfWork withSharing();
-        UnitOfWork withoutSharing();
-        UnitOfWork allowPartialSuccess();
+        DmlCommitable systemMode();
+        DmlCommitable withSharing();
+        DmlCommitable withoutSharing();
+        DmlCommitable allowPartialSuccess();
         // Insert
-        UnitOfWork registerNew(SObject record);
-        UnitOfWork registerNew(Iterable<SObject> records);
+        DmlCommitable registerNew(SObject record);
+        DmlCommitable registerNew(Iterable<SObject> records);
+        DmlCommitable registerNew(SObject record, SObjectField targetField, SObject relatedRecord);
         // Update
-        UnitOfWork registerDirty(SObject record);
-        UnitOfWork registerDirty(Iterable<SObject> records);
+        DmlCommitable registerDirty(SObject record);
+        DmlCommitable registerDirty(Iterable<SObject> records);
         // Relationship
-        UnitOfWork registerRelationship(SObject targetRecord, SObjectField targetField, SObject relatedRecord);
-        UnitOfWork registerRelationship(SObject targetRecord, SObjectField targetField, SObjectField externalIdField, Object externalId);
+        // DmlCommitable registerRelationship(SObject targetRecord, SObjectField targetField, SObject relatedRecord);
+        // DmlCommitable registerRelationship(SObject targetRecord, SObjectField targetField, SObjectField externalIdField, Object externalId);
         // Upsert
-        UnitOfWork registerUpsert(SObject record);
-        UnitOfWork registerUpsert(Iterable<SObject> records);
+        DmlCommitable registerUpsert(SObject record);
+        DmlCommitable registerUpsert(Iterable<SObject> records);
         // Delete
-        UnitOfWork registerDelete(SObject record);
-        UnitOfWork registerDelete(Iterable<SObject> recordssObjs);
+        DmlCommitable registerDelete(SObject record);
+        DmlCommitable registerDelete(Iterable<SObject> recordssObjs);
         // Platform Event
-        UnitOfWork registerPlatformEvent(SObject record);
-        UnitOfWork registerPlatformEvent(List<SObject> records);
+        DmlCommitable registerPlatformEvent(SObject record);
+        DmlCommitable registerPlatformEvent(List<SObject> records);
+        // Debug
+        void preview();
         // Save
         void commitWork();
+        // commitWorkAsSystem();
+        // commitWorkAsUser();
     }
 
     // Implementation
@@ -34,7 +39,7 @@ public inherited sharing class UnitOfWork implements DmlCommitable {
     private DmlExecutor deleteUow = new DeleteUow();
     private DmlExecutor platformEventUow = new PlatformEventUow();
 
-    public UnitOfWork systemMode() {
+    public DmlCommitable systemMode() {
         this.insertUow.withoutSharing();
         this.updateUow.withoutSharing();
         this.deleteUow.withoutSharing();
@@ -42,7 +47,7 @@ public inherited sharing class UnitOfWork implements DmlCommitable {
         return this;
     }
 
-    public UnitOfWork withSharing() {
+    public DmlCommitable withSharing() {
         this.insertUow.withSharing();
         this.updateUow.withSharing();
         this.deleteUow.withSharing();
@@ -50,7 +55,7 @@ public inherited sharing class UnitOfWork implements DmlCommitable {
         return this;
     }
 
-    public UnitOfWork withoutSharing() {
+    public DmlCommitable withoutSharing() {
         this.insertUow.withoutSharing();
         this.updateUow.withoutSharing();
         this.deleteUow.withoutSharing();
@@ -58,7 +63,7 @@ public inherited sharing class UnitOfWork implements DmlCommitable {
         return this;
     }
 
-    public UnitOfWork allowPartialSuccess() {
+    public DmlCommitable allowPartialSuccess() {
         this.insertUow.allowPartialSuccess();
         this.updateUow.allowPartialSuccess();
         this.deleteUow.allowPartialSuccess();
@@ -66,7 +71,7 @@ public inherited sharing class UnitOfWork implements DmlCommitable {
         return this;
     }
 
-    public UnitOfWork registerNew(SObject record) {
+    public DmlCommitable registerNew(SObject record) {
         if (String.isNotBlank(record.Id)) {
             throw new DmlException('Only new records can be registered as new.');
         }
@@ -76,7 +81,7 @@ public inherited sharing class UnitOfWork implements DmlCommitable {
         return this;
     }
 
-    public UnitOfWork registerNew(Iterable<SObject> records) {
+    public DmlCommitable registerNew(Iterable<SObject> records) {
         for (SObject record : records) {
             this.registerNew(record);
         }
@@ -84,9 +89,9 @@ public inherited sharing class UnitOfWork implements DmlCommitable {
         return this;
     }
 
-    public UnitOfWork registerDirty(SObject record) {
+    public DmlCommitable registerDirty(SObject record) {
         if (String.isBlank(record.Id)) {
-            throw new DmlException('Only existing records can be registered as dirty');
+            throw new DmlException('Only existing records can be registered as dirty.');
         }
 
         this.updateUow.register(new PlainSObjectUow(record));
@@ -94,7 +99,7 @@ public inherited sharing class UnitOfWork implements DmlCommitable {
         return this;
     }
 
-    public UnitOfWork registerDirty(Iterable<SObject> records) {
+    public DmlCommitable registerDirty(Iterable<SObject> records) {
         for (SObject record : records) {
             this.registerDirty(record);
         }
@@ -102,15 +107,17 @@ public inherited sharing class UnitOfWork implements DmlCommitable {
         return this;
     }
 
-    public UnitOfWork registerRelationship(SObject targetRecord, SObjectField targetField, SObject relatedRecord) {
+    public DmlCommitable registerNew(SObject targetRecord, SObjectField targetField, SObject relatedRecord) {
+        this.insertUow.register(new RelationshipSObjectUow(targetRecord, targetField, relatedRecord));
         return this;
     }
 
-    public UnitOfWork registerRelationship(SObject targetRecord, SObjectField targetField, SObjectField externalIdField, Object externalId) {
+    public DmlCommitable registerRelationship(SObject targetRecord, SObjectField targetField, SObjectField externalIdField, Object externalId) {
+        // TODO
         return this;
     }
 
-    public UnitOfWork registerUpsert(SObject record) {
+    public DmlCommitable registerUpsert(SObject record) {
         if (String.isBlank(record.Id)) {
             return this.registerNew(record);
         }
@@ -118,7 +125,7 @@ public inherited sharing class UnitOfWork implements DmlCommitable {
         return this.registerDirty(record);
     }
 
-    public UnitOfWork registerUpsert(Iterable<SObject> records) {
+    public DmlCommitable registerUpsert(Iterable<SObject> records) {
         for (SObject record : records) {
             this.registerUpsert(record);
         }
@@ -126,7 +133,7 @@ public inherited sharing class UnitOfWork implements DmlCommitable {
         return this;
     }
 
-    public UnitOfWork registerDelete(SObject record) {
+    public DmlCommitable registerDelete(SObject record) {
         if (String.isBlank(record.Id)) {
             throw new DmlException('Only existing records can be registered as deleted.');
         }
@@ -136,7 +143,7 @@ public inherited sharing class UnitOfWork implements DmlCommitable {
         return this;
     }
 
-    public UnitOfWork registerDelete(Iterable<SObject> records) {
+    public DmlCommitable registerDelete(Iterable<SObject> records) {
         for (SObject record : records) {
             this.registerDelete(record);
         }
@@ -144,17 +151,24 @@ public inherited sharing class UnitOfWork implements DmlCommitable {
         return this;
     }
 
-    public UnitOfWork registerPlatformEvent(SObject record) {
+    public DmlCommitable registerPlatformEvent(SObject record) {
         this.platformEventUow.register(new PlainSObjectUow(record));
         return this;
     }
 
-    public UnitOfWork registerPlatformEvent(List<SObject> records) {
+    public DmlCommitable registerPlatformEvent(List<SObject> records) {
         for (sObject record : records) {
             this.registerPlatformEvent(record);
         }
 
         return this;
+    }
+
+    public void preview() {
+        this.insertUow.preview();
+        this.updateUow.preview();
+        this.deleteUow.preview();
+        this.platformEventUow.preview();
     }
 
     public void commitWork() {
@@ -199,7 +213,17 @@ public inherited sharing class UnitOfWork implements DmlCommitable {
         }
 
         public void register(SObjectUow uow) {
-            
+            String sObjectType = uow.getRecord().getSObjectType().getDescribe().getName();
+
+            ObjectTypeContainer recordsToProcess = this.recordsByType.containsKey(sObjectType) ? this.recordsByType.get(sObjectType) : new ObjectTypeContainer();
+
+            recordsToProcess.add(uow);
+
+            this.recordsByType.put(sObjectType, recordsToProcess);
+        }
+
+        public void preview() {
+            System.debug(JSON.serializePretty(this.recordsByType));
         }
 
         public abstract void execute();
@@ -207,21 +231,27 @@ public inherited sharing class UnitOfWork implements DmlCommitable {
 
     public inherited sharing class InsertUow extends DmlExecutor {
         public override void execute() {
-            for (String sObjectTypeName : recordsByType.keySet()) {
-                recordsByType.get(sObjectTypeName).resolve();
-                Database.insert(recordsByType.get(sObjectTypeName).getRecords(), this.allOrNone, this.accessMode);
+            for (String sObjectTypeName : this.recordsByType.keySet()) {
+                this.recordsByType.get(sObjectTypeName).resolve();
+                Database.insert(this.recordsByType.get(sObjectTypeName).getRecords(), this.allOrNone, this.accessMode);
             }
         }
     }
 
     public inherited sharing class UpdateUow extends DmlExecutor {
         public override void execute() {
-
+            for (String sObjectTypeName : this.recordsByType.keySet()) {
+                this.recordsByType.get(sObjectTypeName).resolve();
+                Database.update(this.recordsByType.get(sObjectTypeName).getRecords(), this.allOrNone, this.accessMode);
+            }
         }
     }
 
     public inherited sharing class DeleteUow extends DmlExecutor {
         public override void execute() {
+            for (String sObjectTypeName : this.recordsByType.keySet()) {
+                Database.delete(this.recordsByType.get(sObjectTypeName).getRecords(), this.allOrNone, this.accessMode);
+            }
         }
     }
 
@@ -253,15 +283,13 @@ public inherited sharing class UnitOfWork implements DmlCommitable {
     }
 
     private abstract class SObjectUow {
-        public SObject record;
+        public SObject currentRecord;
 
         public virtual void resolve() {}
         public abstract SObject getRecord();
     }
 
     private inherited sharing class PlainSObjectUow extends SObjectUow {
-        private SObject currentRecord;
-
         public PlainSObjectUow(SObject currentRecord) {
             this.currentRecord = currentRecord;
         }
@@ -272,33 +300,79 @@ public inherited sharing class UnitOfWork implements DmlCommitable {
     }
 
     private inherited sharing class ExternalSObjectUow extends SObjectUow {
-        private SObject currentRecord;
-        private SObjectField relationshipField;
-        private SObjectField externalIdField;
-        private Object externalId;
+        public SObjectField relatedToField;
+        public SObjectField externalIdField;
+        public SObjectType relatedTo;
+        public String relationshipName;
+        public Object externalId;
 
-        public ExternalSObjectUow(SObject record, SObjectField relatedToField, Schema.SObjectField externalIdField, Object externalId) {
-            this.record = record;
+        public ExternalSObjectUow(SObject record, SObjectField relatedToField, SObjectField externalIdField, Object externalId) {
+            this.validateRelatedToField(relatedToField);
+            this.validateExternalIdField(relatedToField, externalIdField);
+
+            this.currentRecord = record;
+            this.relatedToField = relatedToField;
+            this.externalIdField = externalIdField;
+            this.externalId = externalId;
+        }
+
+        public override void resolve() {
+            SObject relationshipObject = this.relatedTo.newSObject();
+            relationshipObject.put(externalIdField.getDescribe().getName(), this.externalId);
+
+            this.currentRecord.putSObject(this.relationshipName, relationshipObject);
         }
 
         public override SObject getRecord() {
-            return this.record;
+            return this.currentRecord;
+        }
+
+        private void validateRelatedToField(SObjectField relatedToField) {
+            if (relatedToField == null) {
+                // throw new UnitOfWorkException('Invalid argument: relatedToField.');
+            }
+    
+            String relationshipName = relatedToField.getDescribe().getRelationshipName();
+    
+            if (String.isBlank(relationshipName)) {
+                // throw new UnitOfWorkException('Invalid argument: relatedToField. Field supplied is not a relationship field.');
+            }
+        }
+
+        private void validateExternalIdField(SObjectField relatedToField, SObjectField externalIdField) {
+            Boolean externalIdFieldIsValid = externalIdField.getDescribe().isExternalId();
+    
+            if (!externalIdFieldIsValid) {
+                // throw new UnitOfWorkException('Invalid argument: externalIdField. Field supplied is not a marked as an External Identifier.');
+            }
+    
+            List<SObjectType> relatedObjects = relatedToField.getDescribe().getReferenceTo();
+            SObjectType relatedObject = relatedObjects[0];
+            String externalIdFieldName = externalIdField.getDescribe().getName();
+    
+            Boolean relatedHasExternalIdField = relatedObject.getDescribe().fields.getMap().keySet().contains(externalIdFieldName.toLowerCase());
+    
+            if (!relatedHasExternalIdField) {
+                // throw new UnitOfWorkException('Invalid argument: externalIdField. Field supplied is not a known field on the target sObject.');
+            }
         }
     }
 
     private inherited sharing class RelationshipSObjectUow extends SObjectUow {
-        private SObject currentRecord;
-        private SObject relatedRecord;
+        private SObject relatedToRecord;
         private SObjectField relationshipField;
 
-        public RelationshipSObjectUow(SObject currentRecord, SObjectField relationshipField, SObject relatedRecord) {
+        public RelationshipSObjectUow(SObject currentRecord, SObjectField relationshipField, SObject relatedToRecord) {
             this.currentRecord = currentRecord;
-            this.relatedRecord = relatedRecord;
+            this.relatedToRecord = relatedToRecord;
             this.relationshipField = relationshipField;
         }
 
         public override void resolve() {
-            // this.currentRecord.put(this.relationshipField, this.relatedTo.Id);
+            if (this.relationshipField == null || this.relatedToRecord == null) {
+                return;
+            }
+            this.currentRecord.put(this.relationshipField, this.relatedToRecord.Id);
         }
 
         public override SObject getRecord() {
