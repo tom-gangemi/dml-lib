@@ -57,3 +57,18 @@ for(Integer j = 0 ; j < i + 1 ; j++) {
 dml.commitWork();
 
 
+DML uow = new DML();
+
+Opportunity newOpportunity = new Opportunity(
+    Name = 'UoW Test Name ',
+    StageName = 'Open',
+    CloseDate = System.today()
+);
+
+uow.toInsert(DML.Record(newOpportunity));
+
+// DML.Record record = DML.Record(newOpportunity);
+
+// System.debug(record.get());
+
+uow.preview();
