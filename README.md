@@ -1,4 +1,4 @@
-# DML Lib
+# DML Lib (Beta)
 
 The DML Lib provides functional constructs for DML statements in Apex.
 
