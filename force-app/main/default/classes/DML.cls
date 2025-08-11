@@ -19,10 +19,12 @@ public inherited sharing class DML implements Commitable {
         Commitable withSharing();
         Commitable withoutSharing();
         Commitable allowPartialSuccess();
+        // Commitable dmlOptions(Database.DmlOptions options);
         // Insert
         Commitable toInsert(SObject record);
         Commitable toInsert(DML.Record record);
         Commitable toInsert(List<SObject> records);
+        Commitable toInsert(DML.Records records);
         // Update
         Commitable toUpdate(SObject record);
         Commitable toUpdate(DML.Record record);
@@ -31,6 +33,7 @@ public inherited sharing class DML implements Commitable {
         Commitable toUpsert(SObject record);
         Commitable toUpsert(DML.Record record);
         Commitable toUpsert(List<SObject> records);
+        // Commitable toUpsert(SObject record, Schema.SObjectField externalIdField);
         // Delete
         Commitable toDelete(SObject record);
         Commitable toDelete(List<SObject> recordssObjs);
@@ -69,10 +72,10 @@ public inherited sharing class DML implements Commitable {
     private DmlExecutor platformEventUow = new PlatformEventUow();
 
     public Commitable systemMode() {
-        this.insertUow.withoutSharing();
-        this.updateUow.withoutSharing();
-        this.deleteUow.withoutSharing();
-        this.platformEventUow.withoutSharing();
+        this.insertUow.systemMode();
+        this.updateUow.systemMode();
+        this.deleteUow.systemMode();
+        this.platformEventUow.systemMode();
         return this;
     }
 
@@ -118,6 +121,13 @@ public inherited sharing class DML implements Commitable {
         }
 
         this.insertUow.register(record);
+        return this;
+    }
+
+    public Commitable toInsert(DML.Records records) {
+        // for (DML.Record record : records.get()) {
+        //     this.toInsert(record);
+        // }
         return this;
     }
 
@@ -204,10 +214,10 @@ public inherited sharing class DML implements Commitable {
         Savepoint savePoint = Database.setSavepoint();
 
         try {
-            this.insertUow.execute();
-            this.updateUow.execute();
-            this.deleteUow.execute();
-            this.platformEventUow.execute();
+            this.insertUow.commitWork();
+            this.updateUow.commitWork();
+            this.deleteUow.commitWork();
+            this.platformEventUow.commitWork();
         } catch (Exception e) {
             Database.rollback(savePoint);
             throw e;
@@ -255,6 +265,10 @@ public inherited sharing class DML implements Commitable {
 
         public void preview() {
             System.debug(LoggingLevel.ERROR, '\n\n============ DML Preview ============\n' + JSON.serializePretty(this.recordsProcessContainerByType) + '\n=======================================\n');
+        }
+
+        public void commitWork() {
+            this.sharingExecutor.execute(this);
         }
 
         public abstract void execute();

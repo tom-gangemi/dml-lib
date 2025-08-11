@@ -29,6 +29,27 @@ private class DML_Test {
     }
 
     @IsTest
+    static void toInsertWithRelationshipSingleRecord() {
+        // Setup
+        Account newAccount = new Account(Name = 'Test Account');
+        Contact newContact = new Contact(FirstName = 'Test', LastName = 'Contact');
+
+        // Test
+        Test.startTest();
+            new DML()
+                .toInsert(newAccount)
+                .toInsert(DML.Record(newContact).withRelationship(Contact.AccountId, newAccount))
+                .commitWork();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(1, [SELECT COUNT() FROM Contact], 'Contact should be related to Account.');
+        Assert.areEqual(1, [SELECT COUNT() FROM Account], 'Account should be related to Contact.');
+
+        Assert.areEqual(newAccount.Id, newContact.AccountId, 'Contact should be related to Account.');
+    }       
+
+    @IsTest
     static void toInsertMultipleRecords() {
         // Setup
         Account account1 = new Account(Name = 'Test Account 1');
@@ -47,6 +68,32 @@ private class DML_Test {
         
         Assert.isNotNull(account1.Id, 'Account 1 should be inserted and have an Id.');
         Assert.isNotNull(account2.Id, 'Account 2 should be inserted and have an Id.');
+    }
+
+    @IsTest
+    static void toInsertWithRelationshipMultipleRecords() {
+        // Setup
+        Account newAccount = new Account(Name = 'Test Account');
+
+        Contact newContact = new Contact(FirstName = 'Test', LastName = 'Contact');
+        Contact newContact2 = new Contact(FirstName = 'Test 2', LastName = 'Contact 2');
+
+        List<Contact> contacts = new List<Contact>{ newContact, newContact2 };
+
+        // Test
+        Test.startTest();
+            new DML()
+                .toInsert(newAccount)
+                .toInsert(DML.Records(contacts).withRelationship(Contact.AccountId, newAccount))
+                .commitWork();
+        Test.stopTest();
+
+        // Verify
+        // Assert.areEqual(2, [SELECT COUNT() FROM Contact], 'Contact should be related to Account.');
+        // Assert.areEqual(1, [SELECT COUNT() FROM Account], 'Account should be related to Contact.');
+
+        // Assert.areEqual(newAccount.Id, newContact.AccountId, 'Contact should be related to Account.');
+        // Assert.areEqual(newAccount.Id, newContact2.AccountId, 'Contact 2 should be related to Account.');
     }
 
     @IsTest
@@ -497,94 +544,120 @@ private class DML_Test {
 
     // PLATFORM EVENT
 
-    // RELATIONSHIP
+    // SHARING
 
     @IsTest
-    static void registerRelationshipSingleRecord() {
+    static void toInsertUserMode() {
         // Setup
-        Account newAccount = new Account(Name = 'Test Account');
-        Contact newContact = new Contact(FirstName = 'Test', LastName = 'Contact');
+        Case newCase = new Case(Status = 'New', Origin = 'Web');
+
+        SecurityException expectedException = null;
 
         // Test
         Test.startTest();
-            new DML()
-                .toInsert(newAccount)
-                // .toInsert(newContact, Contact.AccountId, newAccount)
-                .commitWork();
+        System.runAs(minimumAccessUser()) {
+            try {
+                new DML()
+                    .toInsert(newCase)
+                    .commitWork();
+            } catch (SecurityException e) {
+                expectedException = e;
+            }
+        }
         Test.stopTest();
 
         // Verify
-        // Assert.areEqual(1, [SELECT COUNT() FROM Contact], 'Contact should be related to Account.');
-        // Assert.areEqual(1, [SELECT COUNT() FROM Account], 'Account should be related to Contact.');
+        Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+        Assert.areEqual('Access to entity \'Case\' denied', expectedException.getMessage(), 'Expected exception message should be thrown.');
+    }
 
-        // Assert.areEqual(newAccount.Id, newContact.AccountId, 'Contact should be related to Account.');
-    }       
+    @IsTest
+    static void toInsertSystemMode() {
+        // Setup
+        Case newCase = new Case(Status = 'New', Origin = 'Web');
 
-    // @IsTest
-    // static void registerComplex() {
-    //     // Setup
-    //     DML uow = new DML();
+        // Test
+        Test.startTest();
+            System.runAs(minimumAccessUser()) {
+                new DML()
+                    .toInsert(newCase)
+                    .systemMode()
+                    .commitWork();
+            }
+        Test.stopTest();
 
-    //     Opportunity newOpportunity = new Opportunity(
-    //         Name = 'UoW Test Name',
-    //         StageName = 'Open',
-    //         CloseDate = System.today()
-    //     );
+        // Verify
+        Assert.areEqual(1, [SELECT COUNT() FROM Case], 'Case should be inserted.');
+        Assert.isNotNull(newCase.Id, 'Case should be inserted and have an Id.');
+    }
 
-    //     // Test
-    //     Test.startTest();
-    //     for(Integer i = 0 ; i < 10 ; i++) {
-    //         uow.toInsert( 
-    //             new Opportunity(
-    //                 Name = 'UoW Test Name ' + i,
-    //                 StageName = 'Open',
-    //                 CloseDate = System.today()
-    //             )
-    //         );
+    // COMPLEX
 
-    //         for(Integer j = 0 ; j < i + 1 ; j++) {
-    //             uow.toInsert(
-    //                 new Product2(
-    //                     Name = newOpportunity.Name + ' : Product : ' + i
-    //                 )
-    //             );
+    @IsTest
+    static void registerComplex() {
+        // Setup
+        DML uow = new DML();
 
-    //             uow.toInsert(
-    //                 new PricebookEntry(
-    //                     UnitPrice = 10,
-    //                     IsActive = true,
-    //                     UseStandardPrice = false,
-    //                     Pricebook2Id = Test.getStandardPricebookId()
-    //                 ),
-    //                 PricebookEntry.Product2Id,
-    //                 product
-    //             );
+        // Test
+        Test.startTest();
+        for(Integer i = 0 ; i < 10 ; i++) {
+            Opportunity newOpportunity = new Opportunity(
+                Name = 'UoW Test Name ' + i,
+                StageName = 'Open',
+                CloseDate = System.today()
+            );
 
-    //             OpportunityLineItem oppLineItem = new OpportunityLineItem(
-    //                 Quantity = 1,
-    //                 TotalPrice = 10
-    //             );
+            uow.toInsert(newOpportunity);
 
-    //             uow.registerRelationship(
-    //                 oppLineItem,
-    //                 OpportunityLineItem.PricebookEntryId,
-    //                 pbe
-    //             );
+            for(Integer j = 0 ; j < i + 1 ; j++) {
+                Product2 product = new Product2(Name = newOpportunity.Name + ' : Product : ' + i);
+                
+                uow.toInsert(product);
 
-    //             uow.toInsert(
-    //                 oppLineItem,
-    //                 OpportunityLineItem.OpportunityId,
-    //                 newOpportunity
-    //             );
-    //         }
-    //     }
-    //     uow.commitWork();
-    //     Test.stopTest();
+                PricebookEntry pbe = new PricebookEntry(
+                    UnitPrice = 10,
+                    IsActive = true,
+                    UseStandardPrice = false,
+                    Pricebook2Id = Test.getStandardPricebookId()
+                );
 
-    //     // Verify
-    //     Assert.areEqual(10, [SELECT COUNT() FROM Opportunity], 'Opportunities should be inserted.');
-    //     Assert.areEqual(55, [SELECT COUNT() FROM Product2], 'Products should be inserted.');
-    //     Assert.areEqual(55, [SELECT COUNT() FROM PricebookEntry], 'Pricebook entries should be inserted.');
-    // }
-    
+                uow.toInsert(
+                    DML.Record(pbe)
+                        .withRelationship(PricebookEntry.Product2Id, product)
+                );
+
+                OpportunityLineItem oppLineItem = new OpportunityLineItem(
+                    Quantity = 1,
+                    TotalPrice = 10
+                );
+
+                uow.toInsert(
+                    DML.Record(new OpportunityLineItem(Quantity = 1, TotalPrice = 10))
+                        .withRelationship(OpportunityLineItem.PricebookEntryId, pbe)
+                        .withRelationship(OpportunityLineItem.OpportunityId, newOpportunity)
+                );
+            }
+        }
+        uow.commitWork();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(10, [SELECT COUNT() FROM Opportunity], 'Opportunities should be inserted.');
+        Assert.areEqual(55, [SELECT COUNT() FROM Product2], 'Products should be inserted.');
+        Assert.areEqual(55, [SELECT COUNT() FROM PricebookEntry], 'Pricebook entries should be inserted.');
+    }
+
+    static User minimumAccessUser() {
+        return new User(
+            Alias = 'newUser',
+            Email = 'newuser@testorg.com',
+            EmailEncodingKey = 'UTF-8',
+            LastName = 'Testing',
+            LanguageLocaleKey = 'en_US',
+            LocaleSidKey = 'en_US',
+            Profile = new Profile(Name = 'Minimum Access - Salesforce'),
+            TimeZoneSidKey = 'America/Los_Angeles',
+            UserName = 'queryselector@testorg.com'
+        );
+    }
 }
