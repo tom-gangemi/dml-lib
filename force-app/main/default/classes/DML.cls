@@ -14,12 +14,6 @@ public inherited sharing class DML implements Commitable {
     }
 
     public interface Commitable {
-        // Settings
-        Commitable systemMode();
-        Commitable withSharing();
-        Commitable withoutSharing();
-        Commitable allowPartialSuccess();
-        // Commitable dmlOptions(Database.DmlOptions options);
         // Insert
         Commitable toInsert(SObject record);
         Commitable toInsert(DML.Record record);
@@ -42,6 +36,15 @@ public inherited sharing class DML implements Commitable {
         Commitable toPublish(List<SObject> records);
         // Debug
         void preview();
+        // Field Level Security
+        // Commitable userMode();
+        Commitable systemMode();
+        // Sharing Mode
+        Commitable withSharing();
+        Commitable withoutSharing();
+        // Partial Success
+        Commitable allowPartialSuccess();
+        // Commitable dmlOptions(Database.DmlOptions options);
         // Save
         void commitWork();
     }
