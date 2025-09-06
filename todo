@@ -1,23 +1,34 @@
-- [ ] Database.DmlOptions options to pass — support a global default (uow.withDefaultOptions(opts)) and per-operation override (.withOptions(perOpOpts)); cover assignment rules, email opts, opt-lock.
-- [ ] Fluent Bulk records update without the loop e.g. DML.Records(opportunities).with(Opportunity.Status, 'Closed Won') — loop-free builder that batches field patches, applies FLS (per mode), then registers the op.
+- [ ] Database.DmlOptions options to pass 
+    — [x] support a global default (uow.withDefaultOptions(opts)) 
+    - [ ] support per-operation override (.withOptions(perOpOpts))
+- [ ] Fluent Bulk records update without the loop e.g.
+    - [x] DML.Records(opportunities).with(Opportunity.Status, 'Closed Won') — loop-free builder that batches field patches, applies FLS (per mode), then registers the op.
 - [ ] Bulk DMLs — group by SObjectType and operation; execute in chunked batches (default 200) to minimize statements and respect limits.
-- [ ] Savepoint + rollback — wrap commitWork() in a savepoint; on error rollback everything; clear internal state afterward.
-- [ ] General and per-operation overrides e.g. new DML(options), registerInsert(..., options) — allow allOrNone, DMLOptions, and SecurityMode per op; merge overrides over UoW defaults.
-- [ ] Field-Level Security
-    - [ ] USER_MODE — enforce CRUD/FLS strictly; fail on violations with clear errors.
-    - [ ] SYSTEM_MODE — skip CRUD/FLS checks (still subject to validation rules)
-    - [ ] stripInaccessible (?) — SANITIZE mode: apply Security.stripInaccessible(CREATABLE/UPDATABLE, records); record stripped fields in results.
+- [ ] Savepoint + rollback — wrap commitWork() in a savepoint; 
+    - [x] on error rollback everything;
+    - [ ] clear internal state afterward.
+- [ ] General and per-operation overrides e.g. new DML(options), registerInsert(..., options) 
+- [ ] allow allOrNone, DMLOptions, and SecurityMode per op; merge overrides over UoW defaults.
+- [ ] Static DML eg. DML.Global.toInsert(); DML.Global.commitWork(); DML.Shared.toInsert();
+- [x] Field-Level Security
+    - [x] USER_MODE — enforce CRUD/FLS strictly; fail on violations with clear errors.
+    - [x] SYSTEM_MODE — skip CRUD/FLS checks (still subject to validation rules)
+    - [x] stripInaccessible (?) — SANITIZE mode: apply Security.stripInaccessible(CREATABLE/UPDATABLE, records); record stripped fields in results.
+    - [ ] Unit Tests
 - [ ] Configurable Sharing Mode
-    - [ ] Inherited sharing by default — keep DML.cls as inherited sharing
-    - [ ] with sharing — use for any reads/selectors performed inside commit.
-    - [ ] without sharing — admin-like reads when resolving refs/deduping.
+    - [x] Inherited sharing by default — keep DML.cls as inherited sharing
+    - [x] with sharing
+    - [x] without sharing
+    - [ ] Sharing mode configurable per operation (?)
 - [ ] Relatonships
-    - [ ] EExplicit dependency ordering — guarantee parents insert before children; deletes run child-first. Accept/derive a type order graph (parents → children) so inserts/upserts happen in safe sequence even if registered out of order; apply lookup values just-in-time before child insert/upsert.
-- [ ] Preview mode - dry-run uow.preview() shows per-type op counts, fields to mutate, effective chunk size/allOrNone/security mode, and pending relationships; no DML.
-- [ ] Retry strategy — optional, bounded retry on UNABLE_TO_LOCK_ROW, splitting chunks when retried; record retry trace in results.
-    [ ] Chunk size
+    - [ ] Explicit dependency ordering — guarantee parents insert before children; deletes run child-first. Accept/derive a type order graph (parents → children) so inserts/upserts happen in safe sequence even if registered out of order; apply lookup values just-in-time before child insert/upsert.
+- [ ] Preview mode or debug mode (?) - dry-run uow.preview() shows per-type op counts, fields to mutate, effective chunk size/allOrNone/security mode, and pending relationships; no DML.
+- [ ] Retry strategy — optional, 
+    - [ ] bounded retry on UNABLE_TO_LOCK_ROW, 
+    - [ ] splitting chunks when retried; record retry trace in results.
+    - [ ] Chunk size
 ```java
-uow.withRetryPolicy(new RetryPolicy()
+dml.withRetryPolicy(new RetryPolicy()
   .maxAttempts(3)
   .initialDelayMs(25)  
   .splitOnRetry(true)); // split chunk into smaller pieces when retrying

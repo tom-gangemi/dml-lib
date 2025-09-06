@@ -190,6 +190,100 @@ private class DML_Test {
         Assert.areEqual(1, [SELECT COUNT() FROM Account], 'Only one account should be inserted, because one has missing required field.');
     }
 
+    @IsTest
+    static void toInsertWithSkipDuplicatesRules() {
+        // Setup
+        List<Account> accounts = new List<Account>{
+            new Account(Name = 'Test Account'),
+            new Account(Name = 'Test Account')
+        };
+
+        // Test
+        Test.startTest();
+            new DML()
+                .toInsert(accounts)
+                .skipDuplicateRules()
+                .commitWork();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(2, [SELECT COUNT() FROM Account], 'Accounts should be inserted.');
+    }
+
+
+    @IsTest
+    static void toInsertUserMode() {
+        // Setup
+        Case newCase = new Case(Status = 'New', Origin = 'Web');
+
+        SecurityException expectedException = null;
+
+        // Test
+        Test.startTest();
+        System.runAs(minimumAccessUser()) {
+            try {
+                new DML()
+                    .toInsert(newCase)
+                    .commitWork(); // user mode by default
+            } catch (SecurityException e) {
+                expectedException = e;
+            }
+        }
+        Test.stopTest();
+
+        // Verify
+        Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+        Assert.areEqual('Access to entity \'Case\' denied', expectedException.getMessage(), 'Expected exception message should be thrown.');
+    }
+
+    @IsTest
+    static void toInsertSystemMode() {
+        // Setup
+        Case newCase = new Case(Status = 'New', Origin = 'Web');
+
+        // Test
+        Test.startTest();
+            System.runAs(minimumAccessUser()) {
+                new DML()
+                    .toInsert(newCase)
+                    .systemMode()
+                    .commitWork();
+            }
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(1, [SELECT COUNT() FROM Case], 'Case should be inserted.');
+        Assert.isNotNull(newCase.Id, 'Case should be inserted and have an Id.');
+    }
+
+    @IsTest
+    static void toInsertStripNotCreatableFields() {
+        // Setup
+        Task newTask = new Task(Subject = 'Test', Type = 'Other');
+
+        NoAccessException expectedException = null;
+
+        // Test
+        Test.startTest();
+        System.runAs(minimumAccessUser()) {
+            try {
+                new DML()
+                    .toInsert(newTask)
+                    .systemMode()
+                    .stripNotCreatableFields()
+                    .commitWork();
+            } catch (NoAccessException e) {
+                expectedException = e;
+            }
+        }
+        Test.stopTest();
+
+        // Verify
+
+        Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+        Assert.areEqual('No access to entity: Task', expectedException.getMessage(), 'Expected exception message should be thrown.');
+    }
+
     // UPDATE
 
     @IsTest
@@ -692,53 +786,6 @@ private class DML_Test {
     }
 
     // PLATFORM EVENT
-
-    // SHARING
-
-    @IsTest
-    static void toInsertUserMode() {
-        // Setup
-        Case newCase = new Case(Status = 'New', Origin = 'Web');
-
-        SecurityException expectedException = null;
-
-        // Test
-        Test.startTest();
-        System.runAs(minimumAccessUser()) {
-            try {
-                new DML()
-                    .toInsert(newCase)
-                    .commitWork();
-            } catch (SecurityException e) {
-                expectedException = e;
-            }
-        }
-        Test.stopTest();
-
-        // Verify
-        Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
-        Assert.areEqual('Access to entity \'Case\' denied', expectedException.getMessage(), 'Expected exception message should be thrown.');
-    }
-
-    @IsTest
-    static void toInsertSystemMode() {
-        // Setup
-        Case newCase = new Case(Status = 'New', Origin = 'Web');
-
-        // Test
-        Test.startTest();
-            System.runAs(minimumAccessUser()) {
-                new DML()
-                    .toInsert(newCase)
-                    .systemMode()
-                    .commitWork();
-            }
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(1, [SELECT COUNT() FROM Case], 'Case should be inserted.');
-        Assert.isNotNull(newCase.Id, 'Case should be inserted and have an Id.');
-    }
 
     // COMPLEX
 
