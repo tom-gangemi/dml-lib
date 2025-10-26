@@ -193,33 +193,12 @@ private class DML_Test {
 		Assert.areEqual(1, [SELECT COUNT() FROM Account], 'Only one account should be inserted, because one has missing required field.');
 	}
 
-	// @IsTest
-	// static void toInsertWithSkipDuplicatesRules() {
-	// 	// Setup
-	// 	List<Account> accounts = new List<Account>{
-	// 		getAccount(1),
-	// 		getAccount(2)
-	// 	};
-
-	// 	// Test
-	// 	Test.startTest();
-	// 		new DML()
-	// 			.toInsert(accounts)
-	// 			.skipDuplicateRules()
-	// 			.commitWork();
-	// 	Test.stopTest();
-
-	// 	// Verify
-	// 	Assert.areEqual(2, [SELECT COUNT() FROM Account], 'Accounts should be inserted.');
-	// }
-
-
 	@IsTest
 	static void toInsertUserMode() {
 		// Setup
 		Case newCase = getCase(1);
 
-		SecurityException expectedException = null;
+		Exception expectedException = null;
 
 		// Test
 		Test.startTest();
@@ -228,7 +207,33 @@ private class DML_Test {
 				new DML()
 					.toInsert(newCase)
 					.commitWork(); // user mode by default
-			} catch (SecurityException e) {
+			} catch (Exception e) {
+				expectedException = e;
+			}
+		}
+		Test.stopTest();
+
+		// Verify
+		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+		Assert.areEqual('Access to entity \'Case\' denied', expectedException.getMessage(), 'Expected exception message should be thrown.');
+	}
+
+	@IsTest
+	static void toInsertWithUserModeExplicitlySet() {
+		// Setup
+		Case newCase = getCase(1);
+
+		Exception expectedException = null;
+
+		// Test
+		Test.startTest();
+		System.runAs(minimumAccessUser()) {
+			try {
+				new DML()
+					.toInsert(newCase)
+					.userMode()
+					.commitWork();
+			} catch (Exception e) {
 				expectedException = e;
 			}
 		}
@@ -258,34 +263,6 @@ private class DML_Test {
 		Assert.areEqual(1, [SELECT COUNT() FROM Case], 'Case should be inserted.');
 		Assert.isNotNull(newCase.Id, 'Case should be inserted and have an Id.');
 	}
-
-	// @IsTest
-	// static void toInsertStripNotCreatableFields() {
-	// 	// Setup
-	// 	Task newTask = getTask(1);
-
-	// 	NoAccessException expectedException = null;
-
-	// 	// Test
-	// 	Test.startTest();
-	// 	System.runAs(minimumAccessUser()) {
-	// 		try {
-	// 			new DML()
-	// 				.toInsert(newTask)
-	// 				.systemMode()
-	// 				.stripNotCreatableFields()
-	// 				.commitWork();
-	// 		} catch (NoAccessException e) {
-	// 			expectedException = e;
-	// 		}
-	// 	}
-	// 	Test.stopTest();
-
-	// 	// Verify
-
-	// 	Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
-	// 	Assert.areEqual('No access to entity: Task', expectedException.getMessage(), 'Expected exception message should be thrown.');
-	// }
 
 	// UPDATE
 
@@ -497,6 +474,115 @@ private class DML_Test {
 		Assert.areEqual(2, [SELECT COUNT() FROM Account WHERE Name IN ('Test Account 1', 'Test Account 1 New Name')], 'Accounts should be updated.');
 	}
 
+	@IsTest
+	static void toUpdateWithUserMode() {
+		// Setup
+		Case newCase = getCase(1);
+		insert newCase;
+
+		Exception expectedException = null;
+
+		// Test
+		Test.startTest();
+		System.runAs(minimumAccessUser()) {
+			try {
+				newCase.Subject = 'Updated Test Case';
+				new DML()
+					.toUpdate(newCase)
+					.commitWork(); // user mode by default
+			} catch (Exception e) {
+				expectedException = e;
+			}
+		}
+		Test.stopTest();
+
+		// Verify
+		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+		Assert.areEqual('Access to entity \'Case\' denied', expectedException.getMessage(), 'Expected exception message should be thrown.');
+	}
+
+	@IsTest
+	static void toUpdateWithUserModeExplicitlySet() {
+		// Setup
+		Case newCase = getCase(1);
+		insert newCase;
+
+		Exception expectedException = null;
+
+		// Test
+		Test.startTest();
+		System.runAs(minimumAccessUser()) {
+			try {
+				newCase.Subject = 'Updated Test Case';
+				new DML()
+					.toUpdate(newCase)
+					.userMode()
+					.commitWork();
+			} catch (Exception e) {
+				expectedException = e;
+			}
+		}
+		Test.stopTest();
+
+		// Verify
+		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+		Assert.areEqual('Access to entity \'Case\' denied', expectedException.getMessage(), 'Expected exception message should be thrown.');
+	}
+
+	@IsTest
+	static void toUpdateWithSystemMode() {
+		// Setup
+		Case newCase = getCase(1);
+		insert newCase;
+
+		// Test
+		Test.startTest();
+			System.runAs(minimumAccessUser()) {
+				newCase.Subject = 'Updated Test Case';
+
+				new DML()
+					.toUpdate(newCase)
+					.systemMode()
+					.withoutSharing()
+					.commitWork();
+			}
+		Test.stopTest();
+
+		// Verify
+		Assert.areEqual(1, [SELECT COUNT() FROM Case], 'Case should be inserted.');
+		Assert.isNotNull(newCase.Id, 'Case should be inserted and have an Id.');
+	}
+
+
+	@IsTest
+	static void toUpdateWithSystemModeAndWithSharing() {
+		// Setup
+		Case newCase = getCase(1);
+		insert newCase;
+
+		Exception expectedException = null;
+
+		// Test
+		Test.startTest();
+		System.runAs(minimumAccessUser()) {
+			try {
+				newCase.Subject = 'Updated Test Case';
+				new DML()
+					.toUpdate(newCase)
+					.withSharing()
+					.systemMode()
+					.commitWork();
+			} catch (Exception e) {
+				expectedException = e;
+			}
+		}
+		Test.stopTest();
+
+		// Verify
+		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+		Assert.isTrue(expectedException.getMessage().contains('insufficient access rights on cross-reference id'), 'Expected exception message should be thrown.');
+	}
+
 	// UPSERT
 
 	@IsTest
@@ -676,6 +762,129 @@ private class DML_Test {
 		Assert.areEqual(3, [SELECT COUNT() FROM Account WHERE Name IN ('Test Account 1', 'Test Account 1 New Name', 'Test Account 3')], 'Accounts should be updated.');
 	}
 
+	@IsTest
+	static void toUpsertWithUserMode() {
+		// Setup
+		Case newCase1 = getCase(1);
+		Case newCase2 = getCase(2);
+
+		insert newCase1;
+
+		Exception expectedException = null;
+
+		// Test
+		Test.startTest();
+		System.runAs(minimumAccessUser()) {
+			try {
+				newCase1.Subject = 'Updated Test Case';
+
+				new DML()
+					.toUpsert(newCase1)
+					.toUpsert(newCase2)
+					.commitWork(); // user mode by default
+			} catch (Exception e) {
+				expectedException = e;
+			}
+		}
+		Test.stopTest();
+
+		// Verify
+		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+		Assert.isTrue(expectedException.getMessage().contains('Operation failed due to fields being inaccessible on Sobject Case, check errors on Exception or Result'), 'Expected exception message should be thrown.');
+	}
+
+	@IsTest
+	static void toUpsertWithUserModeExplicitlySet() {
+		// Setup
+		Case newCase1 = getCase(1);
+		Case newCase2 = getCase(2);
+
+		insert newCase1;
+
+		Exception expectedException = null;
+
+		// Test
+		Test.startTest();
+		System.runAs(minimumAccessUser()) {
+			try {
+				newCase1.Subject = 'Updated Test Case';
+
+				new DML()
+					.toUpsert(newCase1)
+					.toUpsert(newCase2)
+					.userMode()
+					.commitWork();
+			} catch (Exception e) {
+				expectedException = e;
+			}
+		}
+		Test.stopTest();
+
+		// Verify
+		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+		Assert.isTrue(expectedException.getMessage().contains('Operation failed due to fields being inaccessible on Sobject Case, check errors on Exception or Result'), 'Expected exception message should be thrown.');
+	}
+
+	@IsTest
+	static void toUpsertWithSystemMode() {
+		// Setup
+		Case newCase1 = getCase(1);
+		Case newCase2 = getCase(2);
+
+		insert newCase1;
+
+		// Test
+		Test.startTest();
+			System.runAs(minimumAccessUser()) {
+				newCase1.Subject = 'Updated Test Case';
+
+				new DML()
+					.toUpsert(newCase1)
+					.toUpsert(newCase2)
+					.systemMode()
+					.withoutSharing()
+					.commitWork();
+			}
+		Test.stopTest();
+
+		// Verify
+		Assert.areEqual(2, [SELECT COUNT() FROM Case], 'Cases should be inserted.');
+		Assert.isNotNull(newCase1.Id, 'Case 1 should be inserted and have an Id.');
+		Assert.isNotNull(newCase2.Id, 'Case 2 should be inserted and have an Id.');
+	}
+
+	@IsTest
+	static void toUpsertWithSystemModeAndWithSharing() {
+		// Setup
+		Case newCase1 = getCase(1);
+		Case newCase2 = getCase(2);
+
+		insert newCase1;
+
+		Exception expectedException = null;
+
+		// Test
+		Test.startTest();
+		System.runAs(minimumAccessUser()) {
+			try {
+				newCase1.Subject = 'Updated Test Case';
+				new DML()
+					.toUpsert(newCase1)
+					.toUpsert(newCase2)
+					.withSharing()
+					.systemMode()
+					.commitWork();
+			} catch (Exception e) {
+				expectedException = e;
+			}
+		}
+		Test.stopTest();
+
+		// Verify
+		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+		Assert.isTrue(expectedException.getMessage().contains('insufficient access rights on cross-reference id'), 'Expected exception message should be thrown.');
+	}
+
 	// DELETE
 
 	@IsTest
@@ -809,6 +1018,108 @@ private class DML_Test {
 		Assert.areEqual(0, [SELECT COUNT() FROM Account], 'Accounts should be deleted.');
 	}
 
+	@IsTest
+	static void toDeleteWithUserMode() {
+		// Setup
+		Case newCase = getCase(1);
+		insert newCase;
+
+		Exception expectedException = null;
+
+		// Test
+		Test.startTest();
+		System.runAs(minimumAccessUser()) {
+			try {
+				new DML()
+					.toDelete(newCase)
+					.commitWork(); // user mode by default
+			} catch (Exception e) {
+				expectedException = e;
+			}
+		}
+		Test.stopTest();
+
+		// Verify
+		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+		Assert.areEqual('Access to entity \'Case\' denied', expectedException.getMessage(), 'Expected exception message should be thrown.');
+	}
+
+	@IsTest
+	static void toDeleteWithUserModeExplicitlySet() {
+		// Setup
+		Case newCase = getCase(1);
+		insert newCase;
+
+		Exception expectedException = null;
+
+		// Test
+		Test.startTest();
+		System.runAs(minimumAccessUser()) {
+			try {
+				new DML()
+					.toDelete(newCase)
+					.userMode()
+					.commitWork();
+			} catch (Exception e) {
+				expectedException = e;
+			}
+		}
+		Test.stopTest();
+
+		// Verify
+		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+		Assert.areEqual('Access to entity \'Case\' denied', expectedException.getMessage(), 'Expected exception message should be thrown.');
+	}
+
+	@IsTest
+	static void toDeleteWithSystemMode() {
+		// Setup
+		Case newCase = getCase(1);
+		insert newCase;
+
+		// Test
+		Test.startTest();
+			System.runAs(minimumAccessUser()) {
+				new DML()
+					.toDelete(newCase)
+					.systemMode()
+					.withoutSharing()
+					.commitWork();
+			}
+		Test.stopTest();
+
+		// Verify
+		Assert.areEqual(0, [SELECT COUNT() FROM Case], 'Cases should be deleted.');
+	}
+
+	@IsTest
+	static void toDeleteWithSystemModeAndWithSharing() {
+		// Setup
+		Case newCase = getCase(1);
+		insert newCase;
+
+		Exception expectedException = null;
+
+		// Test
+		Test.startTest();
+			System.runAs(minimumAccessUser()) {
+				try {					
+					new DML()
+						.toDelete(newCase)
+						.systemMode()
+						.withoutSharing()
+						.commitWork();
+				} catch (Exception e) {
+					expectedException = e;
+				}
+			}
+		Test.stopTest();
+
+		// Verify
+		Assert.areEqual(0, [SELECT COUNT() FROM Case], 'Cases should be not be deleted, because user has no access to the case.');
+		Assert.isNull(expectedException, 'No exception should be thrown.');
+	}
+
 	// UNDELETE
 
 	@IsTest
@@ -889,7 +1200,175 @@ private class DML_Test {
 		Assert.areEqual(accounts.size(), [SELECT COUNT() FROM Account], 'Accounts should be undeleted.');
 	}
 
+	@IsTest
+	static void toUndeleteWithoutExistingIds() {
+		// Setup
+		Account account = getAccount(1);
+
+		DmlException expectedException = null;
+		
+		// Test
+		Test.startTest();
+			try {
+				new DML()
+					.toUndelete(account)
+					.commitWork();
+			} catch (DmlException e) {
+				expectedException = e;
+			}
+		Test.stopTest();
+		
+		// Verify
+		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+		Assert.areEqual('Only deleted records can be undeleted.', expectedException.getMessage(), 'Expected exception message should be thrown.');
+	}
+
+	@IsTest
+	static void toUndeleteWithUserMode() {
+		// Setup
+		Case newCase = getCase(1);
+		insert newCase;
+
+		delete newCase;
+
+		Assert.areEqual(0, [SELECT COUNT() FROM Case], 'Cases should be deleted.');
+
+		Exception expectedException = null;
+
+		// Test
+		Test.startTest();
+		System.runAs(minimumAccessUser()) {
+			try {
+				new DML()
+					.toUndelete(newCase)
+					.commitWork(); // user mode by default
+			} catch (Exception e) {
+				expectedException = e;
+			}
+		}
+		Test.stopTest();
+
+		// Verify
+		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+		Assert.isTrue(expectedException.getMessage().contains('invalid record id'), 'Expected exception message should be thrown.');
+	}
+
+	@IsTest
+	static void toUndeleteWithUserModeExplicitlySet() {
+		// Setup
+		Case newCase = getCase(1);
+		insert newCase;
+
+		delete newCase;
+
+		Assert.areEqual(0, [SELECT COUNT() FROM Case], 'Cases should be deleted.');
+
+		Exception expectedException = null;
+
+		// Test
+		Test.startTest();
+		System.runAs(minimumAccessUser()) {
+			try {
+				new DML()
+					.toUndelete(newCase)
+					.userMode()
+					.commitWork();
+			} catch (Exception e) {
+				expectedException = e;
+			}
+		}
+		Test.stopTest();
+
+		// Verify
+		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+		Assert.isTrue(expectedException.getMessage().contains('invalid record id'), 'Expected exception message should be thrown.');
+	}
+
+	@IsTest
+	static void toUndeleteWithSystemMode() {
+		// Setup
+		Case newCase = getCase(1);
+		insert newCase;
+
+		delete newCase;
+
+		Assert.areEqual(0, [SELECT COUNT() FROM Case], 'Cases should be deleted.');
+
+		// Test
+		Test.startTest();
+			System.runAs(minimumAccessUser()) {
+				new DML()
+					.toUndelete(newCase)
+					.systemMode()
+					.withoutSharing()
+					.commitWork();
+			}
+		Test.stopTest();
+
+		// Verify
+		Assert.areEqual(1, [SELECT COUNT() FROM Case], 'Cases should be undeleted.');
+	}
+
+
+	@IsTest
+	static void toUndeleteWithSystemModeAndWithSharing() {
+		// Setup
+		Case newCase = getCase(1);
+		insert newCase;
+
+		delete newCase;
+
+		Assert.areEqual(0, [SELECT COUNT() FROM Case], 'Cases should be deleted.');
+
+		Exception expectedException = null;
+
+		// Test
+		Test.startTest();
+			System.runAs(minimumAccessUser()) {
+				try {
+					new DML()
+						.toUndelete(newCase)
+						.systemMode()
+						.withSharing()
+						.commitWork();
+				} catch (Exception e) {
+					expectedException = e;
+				}
+			}
+		Test.stopTest();
+
+		// Verify
+		Assert.areEqual(0, [SELECT COUNT() FROM Case], 'Cases should be not be undeleted, because user has no access to the case.');
+		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+	}
+
 	// PLATFORM EVENT
+
+	// DEBUG
+
+	@IsTest
+	static void dryRun() {
+		// Setup
+		Account account = getAccount(1);
+		
+		// Test
+		Test.startTest();
+			new DML().toInsert(account).dryRun();
+		Test.stopTest();
+
+		// Verify
+		Assert.areEqual(0, [SELECT COUNT() FROM Account], 'Account should not be inserted.');
+	}
+
+	@SuppressWarnings('PMD.ApexUnitTestClassShouldHaveAsserts')
+	@IsTest
+	static void preview() {
+		// Setup
+		Account account = getAccount(1);
+		
+		// Test
+		new DML().toInsert(account).preview();
+	}
 
 	// COMPLEX
 
@@ -945,6 +1424,41 @@ private class DML_Test {
 		Assert.areEqual(10, [SELECT COUNT() FROM Opportunity], 'Opportunities should be inserted.');
 		Assert.areEqual(55, [SELECT COUNT() FROM Product2], 'Products should be inserted.');
 		Assert.areEqual(55, [SELECT COUNT() FROM PricebookEntry], 'Pricebook entries should be inserted.');
+	}
+
+	// HOOK
+
+	@IsTest
+	static void commitHook() {
+		// Setup
+		Account account = getAccount(1);
+
+		MyHook hook = new MyHook();
+		
+		// Test
+		Test.startTest();
+			new DML()
+				.toInsert(account)
+				.commitHook(hook)
+				.commitWork();
+		Test.stopTest();
+
+		// Verify
+		Assert.isTrue(hook.beforeCalled, 'Before hook should be called.');
+		Assert.isTrue(hook.afterCalled, 'After hook should be called.');
+	}
+
+	public class MyHook implements DML.Hook {
+		private Boolean beforeCalled = false;
+		private Boolean afterCalled = false;
+
+		public void before() {
+			beforeCalled = true;
+		}
+
+		public void after() {
+			afterCalled = true;
+		}
 	}
 
 	// HELPERS
