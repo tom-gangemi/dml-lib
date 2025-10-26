@@ -14,7 +14,7 @@
 - [x] Field-Level Security
     - [x] USER_MODE — enforce CRUD/FLS strictly; fail on violations with clear errors.
     - [x] SYSTEM_MODE — skip CRUD/FLS checks (still subject to validation rules)
-    - [x] stripInaccessible (?) — SANITIZE mode: apply Security.stripInaccessible(CREATABLE/UPDATABLE, records); record stripped fields in results.
+    - [ ] stripInaccessible (?) — SANITIZE mode: apply Security.stripInaccessible(CREATABLE/UPDATABLE, records); record stripped fields in results.
     - [ ] Unit Tests
 - [ ] Configurable Sharing Mode
     - [x] Inherited sharing by default — keep DML.cls as inherited sharing
@@ -57,7 +57,7 @@ dml.withRetryPolicy(new RetryPolicy()
     - [ ] before hook should got the list of records to be inserted
     - [ ] after hook should get the results
 - [ ] 100% code coverage — tests for happy/error paths, CRUD/FLS modes, DmlOptions, chunking, lock-retry, preview, hooks, mocking registries, and relationship ordering.
-- [ ] Trigger bypass (optional) — opt-in static context flag toggled around commit; triggers must check it; default OFF.
+- [ ] Trigger bypass adapter(optional) — new apex class DML.Bypass interface that will get sobjectType and based on it can have logic to bypass different triggers
 - [ ] Chunk Size — protect against DML row/CPU limits. uow.withChunkSize(200) (default 200) to mimic trigger batch sizes and reduce recursion; auto-downshift on retries if enabled.
 - [ ] Rich result model (optional) — include outcomes, limits, stripped fields, warnings, event results, and retry trace; provide toJson() for logging.
 ```java
@@ -88,7 +88,7 @@ class UowResult {
 - [ ] Dependency graph
     - [ ] Try to do as less DMLs as possible
     - [ ] Try to build dependency graph between objects (tree?)
-
+- [ ] insertImmediately, updateImmediately, etc.
 ---
 
 ```java
