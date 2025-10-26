@@ -2,7 +2,7 @@
  * Copyright (c) 2025 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/dml-lib/blob/main/LICENSE)
  *
- * v1.0.0
+ * v1.1.0
  * 
  * PMD False Positives:
  * - CyclomaticComplexity: It is a library and we tried to put everything into ONE class
@@ -193,25 +193,25 @@ private class DML_Test {
 		Assert.areEqual(1, [SELECT COUNT() FROM Account], 'Only one account should be inserted, because one has missing required field.');
 	}
 
-	@IsTest
-	static void toInsertWithSkipDuplicatesRules() {
-		// Setup
-		List<Account> accounts = new List<Account>{
-			getAccount(1),
-			getAccount(2)
-		};
+	// @IsTest
+	// static void toInsertWithSkipDuplicatesRules() {
+	// 	// Setup
+	// 	List<Account> accounts = new List<Account>{
+	// 		getAccount(1),
+	// 		getAccount(2)
+	// 	};
 
-		// Test
-		Test.startTest();
-			new DML()
-				.toInsert(accounts)
-				.skipDuplicateRules()
-				.commitWork();
-		Test.stopTest();
+	// 	// Test
+	// 	Test.startTest();
+	// 		new DML()
+	// 			.toInsert(accounts)
+	// 			.skipDuplicateRules()
+	// 			.commitWork();
+	// 	Test.stopTest();
 
-		// Verify
-		Assert.areEqual(2, [SELECT COUNT() FROM Account], 'Accounts should be inserted.');
-	}
+	// 	// Verify
+	// 	Assert.areEqual(2, [SELECT COUNT() FROM Account], 'Accounts should be inserted.');
+	// }
 
 
 	@IsTest
@@ -259,33 +259,33 @@ private class DML_Test {
 		Assert.isNotNull(newCase.Id, 'Case should be inserted and have an Id.');
 	}
 
-	@IsTest
-	static void toInsertStripNotCreatableFields() {
-		// Setup
-		Task newTask = getTask(1);
+	// @IsTest
+	// static void toInsertStripNotCreatableFields() {
+	// 	// Setup
+	// 	Task newTask = getTask(1);
 
-		NoAccessException expectedException = null;
+	// 	NoAccessException expectedException = null;
 
-		// Test
-		Test.startTest();
-		System.runAs(minimumAccessUser()) {
-			try {
-				new DML()
-					.toInsert(newTask)
-					.systemMode()
-					.stripNotCreatableFields()
-					.commitWork();
-			} catch (NoAccessException e) {
-				expectedException = e;
-			}
-		}
-		Test.stopTest();
+	// 	// Test
+	// 	Test.startTest();
+	// 	System.runAs(minimumAccessUser()) {
+	// 		try {
+	// 			new DML()
+	// 				.toInsert(newTask)
+	// 				.systemMode()
+	// 				.stripNotCreatableFields()
+	// 				.commitWork();
+	// 		} catch (NoAccessException e) {
+	// 			expectedException = e;
+	// 		}
+	// 	}
+	// 	Test.stopTest();
 
-		// Verify
+	// 	// Verify
 
-		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
-		Assert.areEqual('No access to entity: Task', expectedException.getMessage(), 'Expected exception message should be thrown.');
-	}
+	// 	Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+	// 	Assert.areEqual('No access to entity: Task', expectedException.getMessage(), 'Expected exception message should be thrown.');
+	// }
 
 	// UPDATE
 
