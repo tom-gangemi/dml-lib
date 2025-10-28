@@ -2,7 +2,7 @@
  * Copyright (c) 2025 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/dml-lib/blob/main/LICENSE)
  *
- * v1.1.0
+ * v1.3.0
  * 
  * PMD False Positives:
  * - CyclomaticComplexity: It is a library and we tried to put everything into ONE class
@@ -51,7 +51,7 @@ private class DML_Test {
 		Assert.areEqual(1, [SELECT COUNT() FROM Contact], 'Contact should be related to Account.');
 
 		Assert.areEqual(newAccount.Id, newContact.AccountId, 'Contact should be related to Account.');
-	}       
+	}
 
 	@IsTest
 	static void toInsertMultipleRecords() {
@@ -1529,6 +1529,25 @@ private class DML_Test {
 		
 		Assert.areEqual('New Test Industry', accounts[1].Industry, 'Account industry should be "New Test Industry".');
 		Assert.areEqual('New Test Description', accounts[1].Description, 'Account description should be "New Test Description".');
+	}
+
+	// SHARED
+
+	@IsTest
+	static void sharedDmlInstance() {
+		Account account = getAccount(1);
+
+		Test.startTest();
+		Integer dmlStatementsBefore = Limits.getDMLStatements();
+
+		DML.Shared.toInsert(account).commitWork();
+		DML.Shared.commitWork();
+
+		Integer dmlStatementsAfter = Limits.getDMLStatements();
+		Test.stopTest();
+
+		Assert.areEqual(1, [SELECT COUNT() FROM Account], 'Account should be inserted.');
+		Assert.areEqual(1, dmlStatementsAfter - dmlStatementsBefore, 'DML statements should be 1, because second commitWork() should not do anything.');
 	}
 
 	// COMPLEX

@@ -61,6 +61,10 @@ dml.withRetryPolicy(new RetryPolicy()
 - [ ] Chunk Size — protect against DML row/CPU limits. uow.withChunkSize(200) (default 200) to mimic trigger batch sizes and reduce recursion; auto-downshift on retries if enabled.
 - [ ] Rich result model (optional) — include outcomes, limits, stripped fields, warnings, event results, and retry trace; provide toJson() for logging.
 ```java
+DML.SaveResult {
+    // copy Database.SaveResult
+}
+
 class DmlOutcome {
   public SObjectType type;
   public Operation op;                 // INSERT/UPDATE/UPSERT/DELETE/UNDELETE/HARDDELETE/MERGE/EVENT

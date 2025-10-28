@@ -2,7 +2,7 @@
  * Copyright (c) 2025 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/dml-lib/blob/main/LICENSE)
  *
- * v1.1.0
+ * v1.3.0
  *
  * PMD False Positives:
  * - MethodNamingConventions - Some methods are uppercase to indicate that they are "constructors" of othere internal classes
@@ -86,6 +86,7 @@ public inherited sharing class DML implements Commitable {
         // Save
         void dryRun();
         void commitWork();
+        void hardCommitWork();
     }
 
     public interface Record {
@@ -342,8 +343,6 @@ public inherited sharing class DML implements Commitable {
     }
 
     public void commitWork() {
-        Savepoint savePoint = Database.setSavepoint();
-
         try {
             this.hook?.before();
 
@@ -356,13 +355,23 @@ public inherited sharing class DML implements Commitable {
 
             this.hook?.after();
         } catch (Exception e) {
+            throw e;
+        } finally {
+            this.reset();
+        }
+    }
+
+    public void hardCommitWork() {
+        Savepoint savePoint = Database.setSavepoint();
+
+        try {
+            this.commitWork();
+        } catch (Exception e) {
             Database.rollback(savePoint);
             throw e;
         } finally {
             Database.releaseSavepoint(savePoint);
         }
-
-        this.reset();
     }
 
     private void reset() {
