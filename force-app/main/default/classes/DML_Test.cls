@@ -47,8 +47,8 @@ private class DML_Test {
 		Test.stopTest();
 
 		// Verify
-		Assert.areEqual(1, [SELECT COUNT() FROM Account], 'Account should be related to Contact.');
-		Assert.areEqual(1, [SELECT COUNT() FROM Contact], 'Contact should be related to Account.');
+		Assert.areEqual(1, [SELECT COUNT() FROM Account], 'Account should be inserted.');
+		Assert.areEqual(1, [SELECT COUNT() FROM Contact], 'Contact should be inserted.');
 
 		Assert.areEqual(newAccount.Id, newContact.AccountId, 'Contact should be related to Account.');
 	}
@@ -167,8 +167,8 @@ private class DML_Test {
 		Test.stopTest();
 
 		// Verify
-		Assert.areEqual(1, [SELECT COUNT() FROM Account], 'Account should be related to Contact.');
-		Assert.areEqual(2, [SELECT COUNT() FROM Contact], 'Contact should be related to Account.');
+		Assert.areEqual(1, [SELECT COUNT() FROM Account], 'Account should be inserted.');
+		Assert.areEqual(2, [SELECT COUNT() FROM Contact], 'Contacts should be inserted.');
 
 		Assert.areEqual(newAccount.Id, newContact.AccountId, 'Contact should be related to Account.');
 		Assert.areEqual(newAccount.Id, newContact2.AccountId, 'Contact 2 should be related to Account.');
@@ -462,8 +462,8 @@ private class DML_Test {
 		Test.stopTest();
 
 		// Verify
-		Assert.areEqual(1, [SELECT COUNT() FROM Account], 'Account should be updated.');
-		Assert.areEqual(1, [SELECT COUNT() FROM Contact], 'Contact should be related to Account.');
+		Assert.areEqual(1, [SELECT COUNT() FROM Account], 'Account should be inserted.');
+		Assert.areEqual(1, [SELECT COUNT() FROM Contact], 'Contact should be updated.');
 
 		List<Contact> contacts = [SELECT Id, AccountId FROM Contact WHERE Id = :newContact.Id];
 
@@ -515,8 +515,8 @@ private class DML_Test {
 		Test.stopTest();
 
 		// Verify
-		Assert.areEqual(2, [SELECT COUNT() FROM Contact], 'Contact should be related to Account.');
-		Assert.areEqual(1, [SELECT COUNT() FROM Account], 'Account should be related to Contact.');
+		Assert.areEqual(2, [SELECT COUNT() FROM Contact], 'Contacts should be updated.');
+		Assert.areEqual(1, [SELECT COUNT() FROM Account], 'Account should be inserted.');
 
 		List<Contact> contacts = [SELECT Id, AccountId FROM Contact WHERE Id IN :contactsToCreate];
 
@@ -629,7 +629,7 @@ private class DML_Test {
 		Test.stopTest();
 
 		// Verify
-		Assert.areEqual(2, [SELECT COUNT() FROM Account WHERE Name IN ('Test Account 1', 'Test Account 1 New Name')], 'Accounts should be updated.');
+		Assert.areEqual(2, [SELECT COUNT() FROM Account WHERE Name IN ('Test Account 1', 'Test Account 1 New Name')], 'Accounts should be present with expected names after partial success update.');
 	}
 
 	@IsTest
@@ -707,8 +707,8 @@ private class DML_Test {
 		Test.stopTest();
 
 		// Verify
-		Assert.areEqual(1, [SELECT COUNT() FROM Case], 'Case should be inserted.');
-		Assert.isNotNull(newCase.Id, 'Case should be inserted and have an Id.');
+		Assert.areEqual(1, [SELECT COUNT() FROM Case], 'Case should be updated.');
+		Assert.isNotNull(newCase.Id, 'Case should be updated and have an Id.');
 	}
 
 
@@ -848,7 +848,7 @@ private class DML_Test {
 		Test.stopTest();
 		
 		// Verify
-		Assert.areEqual(2, [SELECT COUNT() FROM Account], 'Account 2 should be created.');
+		Assert.areEqual(2, [SELECT COUNT() FROM Account], 'Both accounts should be upserted.');
 
 		Assert.areEqual('Updated Test Account 1', account1.Name, 'Account 1 should be updated.');
 		Assert.isNotNull(account2.Id, 'Account 2 should be inserted and have an Id.');
@@ -917,7 +917,7 @@ private class DML_Test {
 		Test.stopTest();
 
 		// Verify
-		Assert.areEqual(3, [SELECT COUNT() FROM Account WHERE Name IN ('Test Account 1', 'Test Account 1 New Name', 'Test Account 3')], 'Accounts should be updated.');
+		Assert.areEqual(3, [SELECT COUNT() FROM Account WHERE Name IN ('Test Account 1', 'Test Account 1 New Name', 'Test Account 3')], 'Accounts should be upserted with expected names.');
 	}
 
 	@IsTest
@@ -1006,9 +1006,10 @@ private class DML_Test {
 		Test.stopTest();
 
 		// Verify
-		Assert.areEqual(2, [SELECT COUNT() FROM Case], 'Cases should be inserted.');
-		Assert.isNotNull(newCase1.Id, 'Case 1 should be inserted and have an Id.');
-		Assert.isNotNull(newCase2.Id, 'Case 2 should be inserted and have an Id.');
+		Assert.areEqual(2, [SELECT COUNT() FROM Case], 'Cases should be upserted.');
+		
+		Assert.isNotNull(newCase1.Id, 'Case 1 should be upserted and have an Id.');
+		Assert.isNotNull(newCase2.Id, 'Case 2 should be upserted and have an Id.');
 	}
 
 	@IsTest
@@ -1274,7 +1275,7 @@ private class DML_Test {
 		Test.stopTest();
 
 		// Verify
-		Assert.areEqual(0, [SELECT COUNT() FROM Case], 'Cases should be not be deleted, because user has no access to the case.');
+		Assert.areEqual(0, [SELECT COUNT() FROM Case], 'Case should be deleted with system mode and without sharing.');
 		Assert.isNull(expectedException, 'No exception should be thrown.');
 	}
 
@@ -1496,7 +1497,7 @@ private class DML_Test {
 		Test.stopTest();
 
 		// Verify
-		Assert.areEqual(0, [SELECT COUNT() FROM Case], 'Cases should be not be undeleted, because user has no access to the case.');
+		Assert.areEqual(0, [SELECT COUNT() FROM Case], 'Case should not be undeleted, because user has no access with sharing mode.');
 		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
 	}
 
