@@ -92,7 +92,7 @@ public inherited sharing class DML implements Commitable {
     public interface Record {
         Record with(SObjectField field, Object value); 
         Record withRelationship(SObjectField targetField, SObject relatedRecord);
-        Record withRelationship(SObjectField targetField, SObjectField externalIdField, Object externalId);
+        Record withRelationship(SObjectField targetField, SObjectField relatedObjectExternalIdField, Object relatedRecordExternalId);
         
         // for internal use only
         EnhancedRecord get();
@@ -101,7 +101,7 @@ public inherited sharing class DML implements Commitable {
     public interface Records {
         Records with(SObjectField field, Object value); 
         Records withRelationship(SObjectField targetField, SObject relatedRecord);
-        Records withRelationship(SObjectField targetField, SObjectField externalIdField, Object externalId);
+        Records withRelationship(SObjectField targetField, SObjectField relatedObjectExternalIdField, Object relatedRecordExternalId);
         
         // for internal use only
         List<Record> get();
@@ -627,6 +627,7 @@ public inherited sharing class DML implements Commitable {
 
         public DmlRecords(Iterable<Id> recordIds) {
             SObjectType objectType = recordIds.iterator().next()?.getSObjectType();
+
             for (Id recordId : recordIds) {
                 this.recordsToProcess.add(objectType.newSObject(recordId));
             }       
@@ -783,65 +784,63 @@ public inherited sharing class DML implements Commitable {
         private SObjectField relationshipField;
 
         public ParentRelationship(SObjectField relationshipField, SObject relatedToRecord) {
+            this.validateRelationshipField(relationshipField);
+
             this.relationshipField = relationshipField;
             this.relatedToRecord = relatedToRecord;
         }
 
         public void resolve(SObject currentRecord) {
-            if (this.relationshipField == null || this.relatedToRecord == null) {
-                return;
-            }
             currentRecord.put(this.relationshipField, this.relatedToRecord.Id);
+        }
+
+        private void validateRelationshipField(SObjectField relationshipField) {            
+            if (String.isBlank(relationshipField.getDescribe().getRelationshipName())) {
+                throw new DmlException('Invalid argument: relationshipField. Field supplied is not a relationship field.');
+            }
         }
     }
 
     private class ExternalRelationship { 
-        public SObjectField relatedToField;
+        public SObjectField relationshipField;
         public SObjectField externalIdField;
-        public SObjectType relatedTo;
-        public String relationshipName;
-        public Object externalId;
+        public SObjectType relatedToType;
+        public Object relatedRecordExternalId;
 
-        public ExternalRelationship(SObjectField relatedToField, SObjectField externalIdField, Object externalId) {
-            this.validateRelatedToField(relatedToField);
-            this.validateExternalIdField(relatedToField, externalIdField);
+        public ExternalRelationship(SObjectField relationshipField, SObjectField relatedObjectExternalIdField, Object relatedRecordExternalId) {
+            this.validateRelatedToField(relationshipField);
+            this.validateExternalIdField(relationshipField, relatedObjectExternalIdField);
 
-            this.relatedToField = relatedToField;
-            this.externalIdField = externalIdField;
-            this.externalId = externalId;
+            this.relationshipField = relationshipField;
+            this.relatedToType = relationshipField.getDescribe().getReferenceTo()[0];
+            this.externalIdField = relatedObjectExternalIdField;
+            this.relatedRecordExternalId = relatedRecordExternalId;
         }  
 
         public void resolve(SObject currentRecord) {
-            SObject relationshipObject = this.relatedTo.newSObject();
-            relationshipObject.put(this.externalIdField.getDescribe().getName(), this.externalId);
+            SObject relationshipObject = this.relatedToType.newSObject();
+            relationshipObject.put(this.externalIdField.getDescribe().getName(), this.relatedRecordExternalId);
 
-            currentRecord.putSObject(this.relationshipName, relationshipObject);
+            currentRecord.putSObject(this.relationshipField.getDescribe().getRelationshipName(), relationshipObject);
         }
 
-        private void validateRelatedToField(SObjectField relatedToField) {
-            if (relatedToField == null) {
-                throw new DmlException('Invalid argument: relatedToField.');
-            }
-    
-            String relationshipName = relatedToField.getDescribe().getRelationshipName();
-    
-            if (String.isBlank(relationshipName)) {
-                throw new DmlException('Invalid argument: relatedToField. Field supplied is not a relationship field.');
+        private void validateRelatedToField(SObjectField relationshipField) {
+            if (String.isBlank(relationshipField.getDescribe().getRelationshipName())) {
+                throw new DmlException('Invalid argument: relationshipField. Field supplied is not a relationship field.');
             }
         }
 
-        private void validateExternalIdField(SObjectField relatedToField, SObjectField externalIdField) {
+        private void validateExternalIdField(SObjectField relationshipField, SObjectField externalIdField) {
             Boolean externalIdFieldIsValid = externalIdField.getDescribe().isExternalId();
     
             if (!externalIdFieldIsValid) {
-                throw new UnitOfWorkException('Invalid argument: externalIdField. Field supplied is not a marked as an External Identifier.');
+                throw new DmlException('Invalid argument: externalIdField. Field supplied is not a marked as an External Identifier.');
             }
     
-            List<SObjectType> relatedObjects = relatedToField.getDescribe().getReferenceTo();
-            SObjectType relatedObject = relatedObjects[0];
+            SObjectType relatedObjectType = relationshipField.getDescribe().getReferenceTo()[0];
             String externalIdFieldName = externalIdField.getDescribe().getName();
     
-            Boolean relatedHasExternalIdField = relatedObject.getDescribe().fields.getMap().keySet().contains(externalIdFieldName.toLowerCase());
+            Boolean relatedHasExternalIdField = relatedObjectType.getDescribe().fields.getMap().keySet().contains(externalIdFieldName.toLowerCase());
     
             if (!relatedHasExternalIdField) {
                 throw new DmlException('Invalid argument: externalIdField. Field supplied is not a known field on the target sObject.');

@@ -41,6 +41,14 @@ dml.withRetryPolicy(new RetryPolicy()
     - [ ] DML Counter — total DML statements and rows processed; expose via results.
     - [ ] Mock Errors - mock different DML errors.
     - [ ] Update/Upsert should update record reference
+```java
+    DML.mock('mockId').mockAll();
+    DML.mock('mockId').mockInsert();
+    DML.mock('mockId').mockUpdate();
+
+    DML.get('mockId').getInserted(Account.SObjectType);
+    DML.get('mockId').getUpdated(Account.SObjectType);
+```
 - [ ] Supported Operations:
     - [ ] insert
     - [ ] update

@@ -54,6 +54,81 @@ private class DML_Test {
 	}
 
 	@IsTest
+	static void toInsertWithInvalidRelationshipSingleRecord() {
+		// Setup
+		Account newAccount = getAccount(1);
+		Contact newContact = getContact(1);
+
+		// Test
+		Test.startTest();
+			Exception expectedException = null;
+
+			try {
+				new DML()
+					.toInsert(newAccount)
+					.toInsert(DML.Record(newContact).withRelationship(Contact.LastName, newAccount))
+					.commitWork();
+			} catch (Exception e) {
+				expectedException = e;
+			}
+		Test.stopTest();
+
+		// Verify
+		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+		Assert.areEqual('Invalid argument: relationshipField. Field supplied is not a relationship field.', expectedException.getMessage(), 'Expected exception message should be thrown.');
+	}
+
+	@IsTest
+	static void toInsertWithInvalidTargetRelationshipFieldSingleRecord() {
+		// Setup
+		Account newAccount = getAccount(1);
+		Contact newContact = getContact(1);
+
+		// Test
+		Test.startTest();
+		Exception expectedException = null;
+
+		try {
+			new DML()
+				.toInsert(newAccount)
+				.toInsert(DML.Record(newContact).withRelationship(Contact.LastName, Account.Name, 'Test'))
+				.commitWork();
+		} catch (Exception e) {
+			expectedException = e;
+		}
+		Test.stopTest();
+
+		// Verify
+		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+		Assert.areEqual('Invalid argument: relationshipField. Field supplied is not a relationship field.', expectedException.getMessage(), 'Expected exception message should be thrown.');
+	}
+
+	@IsTest
+	static void toInsertWithInvalidExternalRelationshipSingleRecord() {
+		// Setup
+		Account newAccount = getAccount(1);
+		Contact newContact = getContact(1);
+
+		// Test
+		Test.startTest();
+		Exception expectedException = null;
+
+		try {
+			new DML()
+				.toInsert(newAccount)
+				.toInsert(DML.Record(newContact).withRelationship(Contact.AccountId, Account.Name, 'Test'))
+				.commitWork();
+		} catch (Exception e) {
+			expectedException = e;
+		}
+		Test.stopTest();
+
+		// Verify
+		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+		Assert.areEqual('Invalid argument: externalIdField. Field supplied is not a marked as an External Identifier.', expectedException.getMessage(), 'Expected exception message should be thrown.');
+	}
+
+	@IsTest
 	static void toInsertMultipleRecords() {
 		// Setup
 		Account account1 = getAccount(1);
@@ -97,6 +172,90 @@ private class DML_Test {
 
 		Assert.areEqual(newAccount.Id, newContact.AccountId, 'Contact should be related to Account.');
 		Assert.areEqual(newAccount.Id, newContact2.AccountId, 'Contact 2 should be related to Account.');
+	}
+
+	@IsTest
+	static void toInsertWithInvalidTargetRelationshipFieldMultipleRecords() {
+		// Setup
+		Account newAccount = getAccount(1);
+		Contact newContact = getContact(1);
+		Contact newContact2 = getContact(2);
+
+		List<Contact> contacts = new List<Contact>{ newContact, newContact2 };
+
+		// Test
+		Test.startTest();
+			Exception expectedException = null;
+
+			try {
+				new DML()
+					.toInsert(newAccount)
+					.toInsert(DML.Records(contacts).withRelationship(Contact.LastName, newAccount))
+					.commitWork();
+			} catch (Exception e) {
+				expectedException = e;
+			}
+		Test.stopTest();
+
+		// Verify
+		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+		Assert.areEqual('Invalid argument: relationshipField. Field supplied is not a relationship field.', expectedException.getMessage(), 'Expected exception message should be thrown.');
+	}
+
+	@IsTest
+	static void toInsertWithInvalidExternalRelationshipMultipleRecords() {
+		// Setup
+		Account newAccount = getAccount(1);
+		Contact newContact = getContact(1);
+		Contact newContact2 = getContact(2);
+
+		List<Contact> contacts = new List<Contact>{ newContact, newContact2 };
+
+		// Test
+		Test.startTest();
+		Exception expectedException = null;
+
+		try {
+			new DML()
+				.toInsert(newAccount)
+				.toInsert(DML.Records(contacts).withRelationship(Contact.LastName, Account.Name, 'Test'))
+				.commitWork();
+		} catch (Exception e) {
+			expectedException = e;
+		}
+		Test.stopTest();
+
+		// Verify
+		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+		Assert.areEqual('Invalid argument: relationshipField. Field supplied is not a relationship field.', expectedException.getMessage(), 'Expected exception message should be thrown.');
+	}
+
+	@IsTest
+	static void toInsertWithInvalidExternalIdFieldMultipleRecords() {
+		// Setup
+		Account newAccount = getAccount(1);
+		Contact newContact = getContact(1);
+		Contact newContact2 = getContact(2);
+
+		List<Contact> contacts = new List<Contact>{ newContact, newContact2 };
+
+		// Test
+		Test.startTest();
+		Exception expectedException = null;
+
+		try {
+			new DML()
+				.toInsert(newAccount)
+				.toInsert(DML.Records(contacts).withRelationship(Contact.AccountId, Account.Name, 'Test'))
+				.commitWork();
+		} catch (Exception e) {
+			expectedException = e;
+		}
+		Test.stopTest();
+
+		// Verify
+		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+		Assert.areEqual('Invalid argument: externalIdField. Field supplied is not a marked as an External Identifier.', expectedException.getMessage(), 'Expected exception message should be thrown.');
 	}
 
 	@IsTest
