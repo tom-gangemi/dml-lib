@@ -715,8 +715,8 @@ private class DML_Test {
 	@IsTest
 	static void toUpdateWithSystemModeAndWithSharing() {
 		// Setup
-		Case newCase = getCase(1);
-		insert newCase;
+		Contact newContact = getContact(1);
+		insert newContact;
 
 		Exception expectedException = null;
 
@@ -724,11 +724,11 @@ private class DML_Test {
 		Test.startTest();
 		System.runAs(minimumAccessUser()) {
 			try {
-				newCase.Subject = 'Updated Test Case';
+				newContact.FirstName = 'Updated Test Contact';
 				new DML()
-					.toUpdate(newCase)
-					.withSharing()
+					.toUpdate(newContact)
 					.systemMode()
+					.withSharing()
 					.commitWork();
 			} catch (Exception e) {
 				expectedException = e;
@@ -1015,10 +1015,10 @@ private class DML_Test {
 	@IsTest
 	static void toUpsertWithSystemModeAndWithSharing() {
 		// Setup
-		Case newCase1 = getCase(1);
-		Case newCase2 = getCase(2);
+		Contact newContact1 = getContact(1);
+		Contact newContact2 = getContact(2);
 
-		insert newCase1;
+		insert newContact1;
 
 		Exception expectedException = null;
 
@@ -1026,10 +1026,10 @@ private class DML_Test {
 		Test.startTest();
 		System.runAs(minimumAccessUser()) {
 			try {
-				newCase1.Subject = 'Updated Test Case';
+				newContact1.FirstName = 'Updated Test Contact';
 				new DML()
-					.toUpsert(newCase1)
-					.toUpsert(newCase2)
+					.toUpsert(newContact1)
+					.toUpsert(newContact2)
 					.withSharing()
 					.systemMode()
 					.commitWork();
@@ -1483,22 +1483,23 @@ private class DML_Test {
 
 		// Test
 		Test.startTest();
-			System.runAs(minimumAccessUser()) {
-				try {
-					new DML()
-						.toUndelete(newCase)
-						.systemMode()
-						.withSharing()
-						.commitWork();
-				} catch (Exception e) {
-					expectedException = e;
-				}
+		System.runAs(minimumAccessUser()) {
+			try {
+				new DML()
+					.toUndelete(newCase)
+					.systemMode()
+					.withSharing()
+					.commitWork();
+			} catch (Exception e) {
+				expectedException = e;
 			}
+		}
 		Test.stopTest();
 
 		// Verify
 		Assert.areEqual(0, [SELECT COUNT() FROM Case], 'Case should not be undeleted, because user has no access with sharing mode.');
 		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+		Assert.isTrue(expectedException.getMessage().contains('insufficient access rights on object id'), 'Expected exception message should be thrown.');
 	}
 
 	// PLATFORM EVENT
