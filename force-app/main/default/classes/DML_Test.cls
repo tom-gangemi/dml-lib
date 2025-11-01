@@ -1007,7 +1007,7 @@ private class DML_Test {
 
 		// Verify
 		Assert.areEqual(2, [SELECT COUNT() FROM Case], 'Cases should be upserted.');
-		
+
 		Assert.isNotNull(newCase1.Id, 'Case 1 should be upserted and have an Id.');
 		Assert.isNotNull(newCase2.Id, 'Case 2 should be upserted and have an Id.');
 	}
@@ -1855,7 +1855,7 @@ private class DML_Test {
 			LocaleSidKey = 'en_US',
 			Profile = new Profile(Name = 'Minimum Access - Salesforce'),
 			TimeZoneSidKey = 'America/Los_Angeles',
-			UserName = 'queryselector@testorg.com'
+			UserName = 'btcdmllibuser@testorg.com'
 		);
 	}
 }
