@@ -1504,6 +1504,53 @@ private class DML_Test {
 
 	// PLATFORM EVENT
 
+	@IsTest
+	static void toPublishSingleRecord() {
+		// Setup
+		FlowOrchestrationEvent event = new FlowOrchestrationEvent();
+
+		Exception expectedException = null;
+
+		// Test
+		Test.startTest();
+			try {
+				new DML()
+					.toPublish(event)
+					.commitWork();
+			} catch (Exception e) {
+				expectedException = e;
+			}
+		Test.stopTest();
+
+		// Verify
+		Assert.isNull(expectedException, 'Expected exception should not be thrown.');
+	}
+
+	@IsTest
+	static void toPublishMultipleRecords() {
+		// Setup
+		List<FlowOrchestrationEvent> events = new List<FlowOrchestrationEvent>{
+			new FlowOrchestrationEvent(),
+			new FlowOrchestrationEvent()
+		};
+		
+		Exception expectedException = null;
+		
+		// Test
+		Test.startTest();
+			try {
+				new DML()
+					.toPublish(events)
+					.commitWork();
+			} catch (Exception e) {
+				expectedException = e;
+			}
+		Test.stopTest();
+
+		// Verify
+		Assert.isNull(expectedException, 'Expected exception should not be thrown.');
+	}
+
 	// DEBUG
 
 	@IsTest
@@ -1692,6 +1739,86 @@ private class DML_Test {
 		Assert.areEqual('New Test Description', accounts[1].Description, 'Account description should be "New Test Description".');
 	}
 
+	// OPTIONS
+
+	@IsTest
+	static void allowFieldTruncationOption() {
+		// Setup
+		String longAccountName = 'Test Account ' + 'Test'.repeat(' ', 100);
+		Account account = getAccount(1);
+		account.Name = longAccountName;
+
+		// Test
+		Test.startTest();
+			Database.DmlOptions options = new Database.DmlOptions();
+			options.allowFieldTruncation = true;
+			
+			new DML()
+				.toInsert(account)
+				.options(options)
+				.commitWork();
+		Test.stopTest();
+
+		// Verify
+		List<Account> accounts = getAccounts();
+
+		Assert.areEqual(1, accounts.size(), 'Account should be inserted.');
+		Assert.areEqual(255, accounts[0].Name.length(), 'Account name should be 255 characters long, because allowFieldTruncation is true.');
+	}
+
+	@IsTest
+	static void optionsAllOrNoneDisabled() {
+		// Setup
+		List<Account> accounts = new List<Account>{
+			getAccount(1),
+			new Account() // Name is required
+		};
+
+		// Test
+		Test.startTest();
+			Database.DmlOptions options = new Database.DmlOptions();
+			options.optAllOrNone = false;
+			
+			new DML()
+				.toInsert(accounts)
+				.options(options)
+				.commitWork();
+		Test.stopTest();
+
+		// Verify
+		Assert.areEqual(1, [SELECT COUNT() FROM Account], 'Only one account should be inserted, because one has missing required field.');
+	}
+
+	@IsTest
+	static void optionsAllOrNoneEnabled() {
+		// Setup
+		List<Account> accounts = new List<Account>{
+			getAccount(1),
+			new Account() // Name is required
+		};
+
+		Exception expectedException = null;
+
+		// Test
+		Test.startTest();
+			Database.DmlOptions options = new Database.DmlOptions();
+			options.optAllOrNone = true;
+			
+			try {
+				new DML()
+					.toInsert(accounts)
+					.options(options)
+					.commitWork();
+			} catch (Exception e) {
+				expectedException = e;
+			}
+		Test.stopTest();
+
+		// Verify
+		Assert.isNotNull(expectedException, 'Expected exception to be thrown.');
+		Assert.isTrue(expectedException.getMessage().contains('Required fields are missing: [Name]'), 'Expected exception message should be thrown.');
+	}
+
 	// SHARED
 
 	@IsTest
@@ -1833,6 +1960,10 @@ private class DML_Test {
 		insert account;
 
 		return account;
+	}
+
+	static List<Account> getAccounts() {
+		return [SELECT Id, Name FROM Account];
 	}
 
 	static List<Account> insertAccounts() {
