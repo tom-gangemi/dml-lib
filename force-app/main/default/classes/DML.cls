@@ -84,9 +84,9 @@ public inherited sharing class DML implements Commitable {
 		Commitable options(Database.DmlOptions options);
 		Commitable commitHook(DML.Hook callback);
 		// Save
-		void dryRun();
-		void commitWork();
-		void hardCommitWork();
+		List<OperationResult> dryRun();
+		List<OperationResult> commitWork();
+		List<OperationResult> hardCommitWork();
 	}
 
 	public interface Record {
@@ -325,33 +325,39 @@ public inherited sharing class DML implements Commitable {
 		return this;
 	}
 
-	public void dryRun() {
+	public List<OperationResult> dryRun() {
 		Savepoint savePoint = Database.setSavepoint();
 
 		this.hook?.before();
 
-		this.insertCommand.commitWork();
-		this.upsertCommand.commitWork();
-		this.updateCommand.commitWork();
-		this.deleteCommand.commitWork();
-		this.undeleteCommand.commitWork();
-		this.publishCommand.commitWork();
+		List<OperationResult> operationResults = new List<OperationResult>();
+
+		operationResults.addAll(this.insertCommand.commitWork());
+		operationResults.addAll(this.upsertCommand.commitWork());
+		operationResults.addAll(this.updateCommand.commitWork());
+		operationResults.addAll(this.deleteCommand.commitWork());
+		operationResults.addAll(this.undeleteCommand.commitWork());
+		operationResults.addAll(this.publishCommand.commitWork());
 
 		this.hook?.after();
 
 		Database.rollback(savePoint);
+
+		return operationResults;
 	}
 
-	public void commitWork() {
+	public List<OperationResult> commitWork() {
+		List<OperationResult> operationResults = new List<OperationResult>();
+
 		try {
 			this.hook?.before();
 
-			this.insertCommand.commitWork();
-			this.upsertCommand.commitWork();
-			this.updateCommand.commitWork();
-			this.deleteCommand.commitWork();
-			this.undeleteCommand.commitWork();
-			this.publishCommand.commitWork();
+			operationResults.addAll(this.insertCommand.commitWork());
+			operationResults.addAll(this.upsertCommand.commitWork());
+			operationResults.addAll(this.updateCommand.commitWork());
+			operationResults.addAll(this.deleteCommand.commitWork());
+			operationResults.addAll(this.undeleteCommand.commitWork());
+			operationResults.addAll(this.publishCommand.commitWork());
 
 			this.hook?.after();
 		} catch (Exception e) {
@@ -359,13 +365,15 @@ public inherited sharing class DML implements Commitable {
 		} finally {
 			this.reset();
 		}
+
+		return operationResults;
 	}
 
-	public void hardCommitWork() {
+	public List<OperationResult> hardCommitWork() {
 		Savepoint savePoint = Database.setSavepoint();
 
 		try {
-			this.commitWork();
+			return this.commitWork();
 		} catch (Exception e) {
 			Database.rollback(savePoint);
 			throw e;
@@ -463,36 +471,43 @@ public inherited sharing class DML implements Commitable {
 			System.debug(LoggingLevel.ERROR, '\n\n============ DML Preview ============\n' + JSON.serializePretty(this.recordsProcessContainerByType) + '\n=======================================\n');
 		}
 
-		public void commitWork() {
-			this.sharingExecutor.execute(this);
+		public List<OperationResult> commitWork() {
+			return this.sharingExecutor.execute(this);
 		}
 
-		public void execute() {
+		public List<OperationResult> execute() {
 			if (!this.customExecutionOrder.isEmpty()) {
-				this.processBasedOnCustomOrder();
-				return;
+				return this.processBasedOnCustomOrder();
 			} 
 
-			this.processBasedOnRegistrationOrder();
+			return this.processBasedOnRegistrationOrder();
 		}
 
-		private void processBasedOnCustomOrder() {
+		private List<OperationResult> processBasedOnCustomOrder() {
+			List<OperationResult> operationResults = new List<OperationResult>();
+
 			for (SObjectType objectTypeName : this.customExecutionOrder) {
 				if (!this.recordsProcessContainerByType.containsKey(objectTypeName)) {
 					continue;
 				}
 
-				executeDml(objectTypeName);
+				operationResults.add(executeDml(objectTypeName));
 			}
+
+			return operationResults;
 		}
 
-		private void processBasedOnRegistrationOrder() {
+		private List<OperationResult> processBasedOnRegistrationOrder() {
+			List<OperationResult> operationResults = new List<OperationResult>();
+
 			for (SObjectType objectTypeName : this.recordsProcessContainerByType.keySet()) {
-				executeDml(objectTypeName);
+				operationResults.add(executeDml(objectTypeName));
 			} 
+
+			return operationResults;
 		}
 
-		public abstract void executeDml(SObjectType objectType);
+		public abstract OperationResult executeDml(SObjectType objectType);
 
 		public virtual void validate(DML.Record record) {
 			return;
@@ -539,8 +554,9 @@ public inherited sharing class DML implements Commitable {
 			}
 		}
 
-		public override void executeDml(SObjectType objectType) {
-			Database.insert(this.recordsProcessContainerByType.get(objectType).getRecordsToProcess(this.accessType), this.options, this.accessMode);
+		public override OperationResult executeDml(SObjectType objectType) {
+			List<Database.SaveResult> saveResults = Database.insert(this.recordsProcessContainerByType.get(objectType).getRecordsToProcess(this.accessType), this.options, this.accessMode);
+			return new OperationResult().objectType(objectType).recordResults(new SaveResultAdapter(saveResults));
 		}
 	}
 
@@ -551,14 +567,16 @@ public inherited sharing class DML implements Commitable {
 			}
 		}
 
-		public override void executeDml(SObjectType objectType) {
-			Database.update(this.recordsProcessContainerByType.get(objectType).getRecordsToProcess(this.accessType), this.options, this.accessMode);
+		public override OperationResult executeDml(SObjectType objectType) {
+			List<Database.SaveResult> saveResults = Database.update(this.recordsProcessContainerByType.get(objectType).getRecordsToProcess(this.accessType), this.options, this.accessMode);
+			return new OperationResult().objectType(objectType).recordResults(new SaveResultAdapter(saveResults));
 		}
 	}
 
 	public inherited sharing class UpsertOperation extends DmlOperation {
-		public override void executeDml(SObjectType objectType) {
-			Database.upsert(this.recordsProcessContainerByType.get(objectType).getRecordsToProcess(this.accessType), this.allOrNone, this.accessMode);
+		public override OperationResult executeDml(SObjectType objectType) {
+			List<Database.UpsertResult> upsertResults = Database.upsert(this.recordsProcessContainerByType.get(objectType).getRecordsToProcess(this.accessType), this.allOrNone, this.accessMode);
+			return new OperationResult().objectType(objectType).recordResults(new UpsertResultAdapter(upsertResults));
 		}
 	}
 
@@ -569,8 +587,9 @@ public inherited sharing class DML implements Commitable {
 			}
 		}
 
-		public override void executeDml(SObjectType objectType) {
-			Database.delete(this.recordsProcessContainerByType.get(objectType).getRecordIdsToProcess(), this.allOrNone, this.accessMode);
+		public override OperationResult executeDml(SObjectType objectType) {
+			List<Database.DeleteResult> deleteResults = Database.delete(this.recordsProcessContainerByType.get(objectType).getRecordIdsToProcess(), this.allOrNone, this.accessMode);
+			return new OperationResult().objectType(objectType).recordResults(new DeleteResultAdapter(deleteResults));
 		}
 	}
 
@@ -581,36 +600,151 @@ public inherited sharing class DML implements Commitable {
 			}
 		}
 
-		public override void executeDml(SObjectType objectType) {
-			Database.undelete(this.recordsProcessContainerByType.get(objectType).getRecordIdsToProcess(), this.allOrNone, this.accessMode);
+		public override OperationResult executeDml(SObjectType objectType) {
+			List<Database.UndeleteResult> undeleteResults = Database.undelete(this.recordsProcessContainerByType.get(objectType).getRecordIdsToProcess(), this.allOrNone, this.accessMode);
+			return new OperationResult().objectType(objectType).recordResults(new UndeleteResultAdapter(undeleteResults));
 		}
 	}
 
 	public inherited sharing class PlatformEventOperation extends DmlOperation {
-		public override void executeDml(SObjectType objectType) {
-			EventBus.publish(this.recordsProcessContainerByType.get(objectType).getRecordsToProcess(this.accessType));
+		public override OperationResult executeDml(SObjectType objectType) {
+			List<Database.SaveResult> saveResults = EventBus.publish(this.recordsProcessContainerByType.get(objectType).getRecordsToProcess(this.accessType));
+			return new OperationResult().objectType(objectType).recordResults(new SaveResultAdapter(saveResults));
 		}
 	}
 	
 	private interface DmlSharing {
-		void execute(DmlOperation executor);
+		List<OperationResult> execute(DmlOperation executor);
 	}
 
 	private inherited sharing class InheritedSharing implements DmlSharing {
-		public void execute(DmlOperation executor) {
-			executor.execute();
+		public List<OperationResult> execute(DmlOperation executor) {
+			return executor.execute();
 		}
 	}
 
 	private without sharing class WithoutSharing implements DmlSharing {
-		public void execute(DmlOperation executor) {
-			executor.execute();
+		public List<OperationResult> execute(DmlOperation executor) {
+			return executor.execute();
 		}
 	}
 
 	private with sharing class WithSharing implements DmlSharing {
-		public void execute(DmlOperation executor) {
-			executor.execute();
+		public List<OperationResult> execute(DmlOperation executor) {
+			return executor.execute();
+		}
+	}
+
+	private class OperationResult {
+		public SObjectType objectType;
+		// public String operationType; //TODO enum
+		public List<RecordResult> recordResults;
+
+		public OperationResult objectType(SObjectType objectType) {
+			this.objectType = objectType;
+			return this;
+		}
+
+		public OperationResult recordResults(DmlAdapter resultAdapter) {
+			this.recordResults = resultAdapter.transform();
+			return this;
+		}
+	}
+
+	private class RecordResult {
+		public Id recordId;
+		public Boolean isSuccess;
+		public List<Database.Error> errors;
+
+		public RecordResult isSuccess(Boolean isSuccess) {
+			this.isSuccess = isSuccess;
+			return this;
+		}
+
+		public RecordResult recordId(Id recordId) {
+			this.recordId = recordId;
+			return this;
+		}
+
+		public RecordResult errors(List<Database.Error> errors) {
+			this.errors = errors;
+			return this;
+		}
+	}
+
+	private interface DmlAdapter {
+		List<RecordResult> transform();
+	}
+
+	private class SaveResultAdapter implements DmlAdapter {
+		private List<Database.SaveResult> saveResults;
+
+		public SaveResultAdapter(List<Database.SaveResult> saveResults) {
+			this.saveResults = saveResults;
+		}
+
+		public List<RecordResult> transform() {
+			List<RecordResult> recordResults = new List<RecordResult>();
+
+			for (Database.SaveResult saveResult : this.saveResults) {
+				recordResults.add(new RecordResult().isSuccess(saveResult.isSuccess()).recordId(saveResult.getId()).errors(saveResult.getErrors()));
+			}
+
+			return recordResults;
+		}
+	}
+
+	private class UpsertResultAdapter implements DmlAdapter {
+		private List<Database.UpsertResult> upsertResults;
+
+		public UpsertResultAdapter(List<Database.UpsertResult> upsertResults) {
+			this.upsertResults = upsertResults;
+		}
+
+		public List<RecordResult> transform() {
+			List<RecordResult> recordResults = new List<RecordResult>();
+
+			for (Database.UpsertResult upsertResult : this.upsertResults) {
+				recordResults.add(new RecordResult().isSuccess(upsertResult.isSuccess()).recordId(upsertResult.getId()).errors(upsertResult.getErrors()));
+			}
+
+			return recordResults;
+		}
+	}
+
+	private class DeleteResultAdapter implements DmlAdapter {
+		private List<Database.DeleteResult> deleteResults;
+
+		public DeleteResultAdapter(List<Database.DeleteResult> deleteResults) {
+			this.deleteResults = deleteResults;
+		}
+
+		public List<RecordResult> transform() {
+			List<RecordResult> recordResults = new List<RecordResult>();
+
+			for (Database.DeleteResult deleteResult : this.deleteResults) {
+				recordResults.add(new RecordResult().isSuccess(deleteResult.isSuccess()).recordId(deleteResult.getId()).errors(deleteResult.getErrors()));
+			}
+
+			return recordResults;
+		}
+	}
+
+	private class UndeleteResultAdapter implements DmlAdapter {
+		private List<Database.UndeleteResult> undeleteResults;
+
+		public UndeleteResultAdapter(List<Database.UndeleteResult> undeleteResults) {
+			this.undeleteResults = undeleteResults;
+		}
+
+		public List<RecordResult> transform() {
+			List<RecordResult> recordResults = new List<RecordResult>();
+
+			for (Database.UndeleteResult undeleteResult : this.undeleteResults) {
+				recordResults.add(new RecordResult().isSuccess(undeleteResult.isSuccess()).recordId(undeleteResult.getId()).errors(undeleteResult.getErrors()));
+			}
+
+			return recordResults;
 		}
 	}
 
