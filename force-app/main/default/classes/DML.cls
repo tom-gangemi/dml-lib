@@ -2,7 +2,7 @@
  * Copyright (c) 2025 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/dml-lib/blob/main/LICENSE)
  *
- * v1.5.0
+ * v1.6.0
  *
  * PMD False Positives:
  * - MethodNamingConventions - Some methods are uppercase to indicate that they are "constructors" of othere internal classes
