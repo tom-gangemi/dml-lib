@@ -512,6 +512,71 @@ private class DML_Test {
 		Assert.isNotNull(newCase.Id, 'Case should be inserted and have an Id.');
 	}
 
+	@IsTest
+	static void toInsertSingleRecordWithMocking() {
+		// Setup
+		Account account1 = getAccount(1);
+
+		DML.whenDmlIdentifier('dmlMockId').thenMockAllInserts();
+
+		// Test
+		Test.startTest();
+			new DML()
+				.toInsert(account1)
+				.identifier('dmlMockId')
+				.commitWork();
+		Test.stopTest();
+
+		DML.Result result = DML.getMockResulfForDml('dmlMockId');
+
+		// Verify
+		Assert.areEqual(0, [SELECT COUNT() FROM Account], 'No records should be inserted to the database.');
+		Assert.areEqual(1, result.inserted().size(), 'Inserted operation result should contain 1 result.');
+		Assert.areEqual(Account.SObjectType, result.inserted(Account.SObjectType).getObjectType(), 'Inserted operation result should contain Account object type.');
+		Assert.areEqual(DML.Type.INSERT_DML, result.inserted(Account.SObjectType).getType(), 'Inserted operation result should contain insert type.');
+		Assert.areEqual(1, result.inserted(Account.SObjectType).requestedCount(), 'Inserted operation result should contain 1 record.');
+		Assert.areEqual(1, result.inserted(Account.SObjectType).records().size(), 'Inserted operation result should contain the inserted record.');
+		Assert.areEqual(1, result.inserted(Account.SObjectType).getRecordResults().size(), 'Inserted operation result should contain the inserted record result.');
+		Assert.isTrue(result.inserted(Account.SObjectType).getRecordResults()[0].isSuccess(), 'Inserted operation result should contain a successful record result.');
+		Assert.isNotNull(result.inserted(Account.SObjectType).getRecordResults()[0].getId(), 'Inserted operation result should contain a mocked record Id.');
+		Assert.isNotNull(account1.Id, 'Account should have mocked Id.');
+	}
+
+	@IsTest
+	static void toInsertMultipleRecordsWithMocking() {
+		// Setup
+		Account account1 = getAccount(1);
+		Account account2 = getAccount(2);
+
+		DML.whenDmlIdentifier('dmlMockId').thenMockAllInserts();
+
+		// Test
+		Test.startTest();
+			new DML()
+				.toInsert(account1)
+				.toInsert(account2)
+				.identifier('dmlMockId')
+				.commitWork();
+		Test.stopTest();
+
+		DML.Result result = DML.getMockResulfForDml('dmlMockId');
+
+		// Verify
+		Assert.areEqual(0, [SELECT COUNT() FROM Account], 'No records should be inserted to the database.');
+		Assert.areEqual(1, result.inserted().size(), 'Inserted operation result should contain 1 result.');
+		Assert.areEqual(Account.SObjectType, result.inserted(Account.SObjectType).getObjectType(), 'Inserted operation result should contain Account object type.');
+		Assert.areEqual(DML.Type.INSERT_DML, result.inserted(Account.SObjectType).getType(), 'Inserted operation result should contain insert type.');
+		Assert.areEqual(2, result.inserted(Account.SObjectType).requestedCount(), 'Inserted operation result should contain 2 records.');
+		Assert.areEqual(2, result.inserted(Account.SObjectType).records().size(), 'Inserted operation result should contain the inserted record.');
+		Assert.areEqual(2, result.inserted(Account.SObjectType).getRecordResults().size(), 'Inserted operation result should contain the inserted record result.');
+		Assert.isTrue(result.inserted(Account.SObjectType).getRecordResults()[0].isSuccess(), 'Inserted operation result should contain a successful record result.');
+		Assert.isTrue(result.inserted(Account.SObjectType).getRecordResults()[1].isSuccess(), 'Inserted operation result should contain a successful record result.');
+		Assert.isNotNull(result.inserted(Account.SObjectType).getRecordResults()[0].getId(), 'Inserted operation result should contain a mocked record Id.');
+		Assert.isNotNull(result.inserted(Account.SObjectType).getRecordResults()[1].getId(), 'Inserted operation result should contain a mocked record Id.');
+		Assert.isNotNull(account1.Id, 'Account should have mocked Id.');
+		Assert.isNotNull(account2.Id, 'Account 2 should have mocked Id.');
+	}
+
 	// UPDATE
 
 	@IsTest
