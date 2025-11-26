@@ -16,6 +16,8 @@ export default defineConfig({
         text: 'Docs',
         items: [
           { text: 'API', link: '/api' },
+          { text: 'Mocking', link: '/mocking' },
+          { text: 'Result', link: '/result' },
           { text: 'Examples', link: '/examples' }
         ]
       }

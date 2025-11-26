@@ -21,12 +21,26 @@ The following are methods for using `DML`:
 - [`toInsert(Iterable<SObject> records)`](#toinsert)
 - [`toInsert(DML.Records records)`](#toinsert)
 
+[**INSERT IMMEDIATELY**](#insert-immediately)
+
+- [`insertImmediately(SObject record)`](#insertimmediately)
+- [`insertImmediately(DML.Record record)`](#insertimmediately)
+- [`insertImmediately(List<SObject> records)`](#insertimmediately)
+- [`insertImmediately(DML.Records records)`](#insertimmediately)
+
 [**UPDATE**](#update)
 
 - [`toUpdate(SObject record)`](#toupdate)
 - [`toUpdate(DML.Record record)`](#toupdate)
 - [`toUpdate(Iterable<SObject> records)`](#toupdate)
 - [`toUpdate(DML.Records records)`](#toupdate)
+
+[**UPDATE IMMEDIATELY**](#update-immediately)
+
+- [`updateImmediately(SObject record)`](#updateimmediately)
+- [`updateImmediately(DML.Record record)`](#updateimmediately)
+- [`updateImmediately(List<SObject> records)`](#updateimmediately)
+- [`updateImmediately(DML.Records records)`](#updateimmediately)
 
 [**UPSERT**](#upsert)
 
@@ -35,12 +49,26 @@ The following are methods for using `DML`:
 - [`toUpsert(Iterable<SObject> records)`](#toupsert)
 - [`toUpsert(DML.Records records)`](#toupsert)
 
+[**UPSERT IMMEDIATELY**](#upsert-immediately)
+
+- [`upsertImmediately(SObject record)`](#upsertimmediately)
+- [`upsertImmediately(DML.Record record)`](#upsertimmediately)
+- [`upsertImmediately(List<SObject> records)`](#upsertimmediately)
+- [`upsertImmediately(DML.Records records)`](#upsertimmediately)
+
 [**DELETE**](#delete)
 
 - [`toDelete(Id recordId)`](#todelete)
 - [`toDelete(SObject record)`](#todelete)
 - [`toDelete(Iterable<Id> recordIds)`](#todelete)
 - [`toDelete(List<SObject> records)`](#todelete)
+
+[**DELETE IMMEDIATELY**](#delete-immediately)
+
+- [`deleteImmediately(Id recordId)`](#deleteimmediately)
+- [`deleteImmediately(SObject record)`](#deleteimmediately)
+- [`deleteImmediately(Iterable<Id> recordIds)`](#deleteimmediately)
+- [`deleteImmediately(List<SObject> records)`](#deleteimmediately)
 
 [**UNDELETE**](#undelete)
 
@@ -49,24 +77,27 @@ The following are methods for using `DML`:
 - [`toUndelete(Iterable<Id> recordIds)`](#toundelete)
 - [`toUndelete(List<SObject> records)`](#toundelete)
 
-[**MERGE**](#merge)
+[**UNDELETE IMMEDIATELY**](#undelete-immediately)
 
-- [`toMerge(SObject mergeToRecord, Id duplicateId)`](#tomerge)
-- [`toMerge(SObject mergeToRecord, SObject duplicateRecord)`](#tomerge)
-- [`toMerge(SObject mergeToRecord, List<SObject> duplicateRecords)`](#tomerge)
-- [`toMerge(SObject mergeToRecord, Iterable<Id> duplicateIds)`](#tomerge)
+- [`undeleteImmediately(Id recordId)`](#undeleteimmediately)
+- [`undeleteImmediately(SObject record)`](#undeleteimmediately)
+- [`undeleteImmediately(Iterable<Id> recordIds)`](#undeleteimmediately)
+- [`undeleteImmediately(List<SObject> records)`](#undeleteimmediately)
 
 [**PLATFORM EVENTS**](#platform-events)
 
 - [`toPublish(SObject record)`](#topublish)
 - [`toPublish(Iterable<SObject> records)`](#topublish)
 
+[**PUBLISH IMMEDIATELY**](#publish-immediately)
+
+- [`publishImmediately(SObject record)`](#publishimmediately)
+- [`publishImmediately(List<SObject> records)`](#publishimmediately)
+
 [**FIELD-LEVEL SECURITY**](#field-level-security)
 
 - [`userMode()`](#usermode)
 - [`systemMode()`](#systemmode)
-- [`stripNotCreatableFields()`](#stripnotcreatablefields)
-- [`stripNotUpdatableFields()`](#stripnotupdatablefields)
 
 [**SHARING MODE**](#sharing-mode)
 
@@ -76,9 +107,12 @@ The following are methods for using `DML`:
 [**CONFIGURATION**](#configuration)
 
 - [`allowPartialSuccess()`](#allowpartialsuccess)
-- [`skipDuplicateRules()`](#skipduplicaterules)
 - [`options(Database.DmlOptions options)`](#options)
 - [`commitHook(DML.Hook callback)`](#commithook)
+
+[**MOCKING**](#mocking)
+
+- [`identifier(String dmlIdentifier)`](#identifier)
 
 [**DEBUGGING**](#debugging)
 
@@ -87,6 +121,8 @@ The following are methods for using `DML`:
 [**EXECUTION**](#execution)
 
 - [`commitWork()`](#commitwork)
+- [`dryRun()`](#dryrun)
+- [`hardCommitWork()`](#hardcommitwork)
 
 ## INSERT
 
@@ -134,6 +170,33 @@ new DML()
     .commitWork();
 ```
 
+## INSERT IMMEDIATELY
+
+### insertImmediately
+
+Insert records immediately and return the operation result without calling `commitWork()`.
+
+**Signature**
+
+```apex title="Method Signatures"
+OperationResult insertImmediately(SObject record);
+OperationResult insertImmediately(DML.Record record);
+OperationResult insertImmediately(List<SObject> records);
+OperationResult insertImmediately(DML.Records records);
+```
+
+**Example**
+
+```apex title="Insert Immediately"
+Account account = new Account(Name = 'My Account');
+
+DML.OperationResult result = new DML().insertImmediately(account);
+
+Assert.isNotNull(account.Id);
+Assert.areEqual(1, result.succeededCount());
+Assert.isFalse(result.hasFailures());
+```
+
 ## UPDATE
 
 ### toUpdate
@@ -171,6 +234,33 @@ new DML()
     .commitWork();
 ```
 
+## UPDATE IMMEDIATELY
+
+### updateImmediately
+
+Update records immediately and return the operation result without calling `commitWork()`.
+
+**Signature**
+
+```apex title="Method Signatures"
+OperationResult updateImmediately(SObject record);
+OperationResult updateImmediately(DML.Record record);
+OperationResult updateImmediately(List<SObject> records);
+OperationResult updateImmediately(DML.Records records);
+```
+
+**Example**
+
+```apex title="Update Immediately"
+Account account = [SELECT Id, Name FROM Account LIMIT 1];
+account.Name = 'Updated Name';
+
+DML.OperationResult result = new DML().updateImmediately(account);
+
+Assert.areEqual(1, result.succeededCount());
+Assert.isFalse(result.hasFailures());
+```
+
 ## UPSERT
 
 ### toUpsert
@@ -200,6 +290,32 @@ List<Account> accounts = new List<Account>{
 new DML()
     .toUpsert(accounts)
     .commitWork();
+```
+
+## UPSERT IMMEDIATELY
+
+### upsertImmediately
+
+Upsert records immediately and return the operation result without calling `commitWork()`.
+
+**Signature**
+
+```apex title="Method Signatures"
+OperationResult upsertImmediately(SObject record);
+OperationResult upsertImmediately(DML.Record record);
+OperationResult upsertImmediately(List<SObject> records);
+OperationResult upsertImmediately(DML.Records records);
+```
+
+**Example**
+
+```apex title="Upsert Immediately"
+Account account = new Account(Name = 'New or Existing Account');
+
+DML.OperationResult result = new DML().upsertImmediately(account);
+
+Assert.isNotNull(account.Id);
+Assert.areEqual(1, result.succeededCount());
 ```
 
 ## DELETE
@@ -235,6 +351,32 @@ new DML()
     .commitWork();
 ```
 
+## DELETE IMMEDIATELY
+
+### deleteImmediately
+
+Delete records immediately and return the operation result without calling `commitWork()`.
+
+**Signature**
+
+```apex title="Method Signatures"
+OperationResult deleteImmediately(Id recordId);
+OperationResult deleteImmediately(SObject record);
+OperationResult deleteImmediately(Iterable<Id> recordIds);
+OperationResult deleteImmediately(List<SObject> records);
+```
+
+**Example**
+
+```apex title="Delete Immediately"
+Account account = [SELECT Id FROM Account LIMIT 1];
+
+DML.OperationResult result = new DML().deleteImmediately(account);
+
+Assert.areEqual(1, result.succeededCount());
+Assert.isFalse(result.hasFailures());
+```
+
 ## UNDELETE
 
 ### toUndelete
@@ -261,30 +403,30 @@ new DML()
     .commitWork();
 ```
 
-## MERGE
+## UNDELETE IMMEDIATELY
 
-### toMerge
+### undeleteImmediately
 
-Merge duplicate records (placeholder implementation).
+Undelete records immediately and return the operation result without calling `commitWork()`.
 
 **Signature**
 
 ```apex title="Method Signatures"
-Commitable toMerge(SObject mergeToRecord, Id duplicateId);
-Commitable toMerge(SObject mergeToRecord, SObject duplicateRecord);
-Commitable toMerge(SObject mergeToRecord, List<SObject> duplicateRecords);
-Commitable toMerge(SObject mergeToRecord, Iterable<Id> duplicateIds);
+OperationResult undeleteImmediately(Id recordId);
+OperationResult undeleteImmediately(SObject record);
+OperationResult undeleteImmediately(Iterable<Id> recordIds);
+OperationResult undeleteImmediately(List<SObject> records);
 ```
 
 **Example**
 
-```sql title="Traditional DML"
-merge masterAccount duplicateAccount;
-```
-```apex title="DML Lib Implementation"
-new DML()
-    .toMerge(masterAccount, duplicateAccount)
-    .commitWork();
+```apex title="Undelete Immediately"
+Account deletedAccount = [SELECT Id FROM Account WHERE IsDeleted = true ALL ROWS LIMIT 1];
+
+DML.OperationResult result = new DML().undeleteImmediately(deletedAccount);
+
+Assert.areEqual(1, result.succeededCount());
+Assert.isFalse(result.hasFailures());
 ```
 
 ## PLATFORM EVENTS
@@ -310,6 +452,29 @@ MyEvent__e event = new MyEvent__e(Message__c = 'Hello World');
 new DML()
     .toPublish(event)
     .commitWork();
+```
+
+## PUBLISH IMMEDIATELY
+
+### publishImmediately
+
+Publish platform events immediately and return the operation result without calling `commitWork()`.
+
+**Signature**
+
+```apex title="Method Signatures"
+OperationResult publishImmediately(SObject record);
+OperationResult publishImmediately(List<SObject> records);
+```
+
+**Example**
+
+```apex title="Publish Immediately"
+MyEvent__e event = new MyEvent__e(Message__c = 'Hello World');
+
+DML.OperationResult result = new DML().publishImmediately(event);
+
+Assert.areEqual(1, result.requestedCount());
 ```
 
 ## FIELD-LEVEL SECURITY
@@ -349,45 +514,6 @@ Commitable systemMode();
 new DML()
     .toInsert(new Case(Subject = 'System Mode Case'))
     .systemMode()
-    .commitWork();
-```
-
-### stripNotCreatableFields
-
-Remove fields that the current user cannot create.
-
-**Signature**
-
-```apex title="Method Signature"
-Commitable stripNotCreatableFields();
-```
-
-**Example**
-
-```apex title="Strip Non-Creatable Fields"
-new DML()
-    .toInsert(task)
-    .systemMode()
-    .stripNotCreatableFields()
-    .commitWork();
-```
-
-### stripNotUpdatableFields
-
-Remove fields that the current user cannot update.
-
-**Signature**
-
-```apex title="Method Signature"
-Commitable stripNotUpdatableFields();
-```
-
-**Example**
-
-```apex title="Strip Non-Updatable Fields"
-new DML()
-    .toUpdate(accounts)
-    .stripNotUpdatableFields()
     .commitWork();
 ```
 
@@ -458,25 +584,6 @@ new DML()
     .commitWork();
 ```
 
-### skipDuplicateRules
-
-Skip duplicate rule evaluation during DML operations.
-
-**Signature**
-
-```apex title="Method Signature"
-Commitable skipDuplicateRules();
-```
-
-**Example**
-
-```apex title="Skip Duplicate Rules"
-new DML()
-    .toInsert(accounts)
-    .skipDuplicateRules()
-    .commitWork();
-```
-
 ### options
 
 Provide custom Database.DmlOptions for DML operations.
@@ -529,6 +636,31 @@ new DML()
     .commitWork();
 ```
 
+## MOCKING
+
+### identifier
+
+Associate a DML operation with an identifier for mocking and result tracking.
+
+**Signature**
+
+```apex title="Method Signature"
+Commitable identifier(String dmlIdentifier);
+```
+
+**Example**
+
+```apex title="Using Identifier"
+new DML()
+    .toInsert(accounts)
+    .identifier('myTransaction')
+    .commitWork();
+```
+
+::: tip
+For complete mocking documentation, see the [Mocking Guide](/mocking).
+:::
+
 ## DEBUGGING
 
 ### preview
@@ -554,23 +686,78 @@ new DML()
 
 ### commitWork
 
-Execute all registered DML operations in a single transaction.
+Execute all registered DML operations in a single transaction and return the results.
 
 **Signature**
 
 ```apex title="Method Signature"
-void commitWork();
+Result commitWork();
 ```
 
 **Example**
 
 ```apex title="Commit Work"
-new DML()
+DML.Result result = new DML()
     .toInsert(account)
     .toUpdate(contact)
     .toDelete(leadId)
     .commitWork();
+
+// Check results
+Assert.isFalse(result.inserted(Account.SObjectType).hasFailures());
 ```
+
+### dryRun
+
+Execute all registered DML operations but rollback the transaction. Useful for validation.
+
+**Signature**
+
+```apex title="Method Signature"
+Result dryRun();
+```
+
+**Example**
+
+```apex title="Dry Run"
+DML.Result result = new DML()
+    .toInsert(account)
+    .dryRun();
+
+// Operations were executed but rolled back
+Assert.areEqual(0, [SELECT COUNT() FROM Account]);
+
+// But we can still check what would have happened
+Assert.areEqual(1, result.inserted().size());
+```
+
+### hardCommitWork
+
+Execute all registered DML operations with automatic rollback on any exception.
+
+**Signature**
+
+```apex title="Method Signature"
+Result hardCommitWork();
+```
+
+**Example**
+
+```apex title="Hard Commit Work"
+try {
+    DML.Result result = new DML()
+        .toInsert(account)
+        .toUpdate(contact)
+        .hardCommitWork();
+} catch (Exception e) {
+    // All operations are automatically rolled back
+    System.debug('Transaction rolled back: ' + e.getMessage());
+}
+```
+
+::: tip
+For complete result documentation, see the [Result Guide](/result).
+:::
 
 ## Record Manipulation
 
