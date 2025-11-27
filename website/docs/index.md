@@ -4,22 +4,34 @@ layout: home
 
 hero:
   name: "DML Lib"
-  text: "Apex DML Lib."
-  tagline: My great project tagline
+  text: "Apex DML Library"
+  tagline: A powerful, fluent API for Salesforce DML operations with built-in mocking support
   actions:
     - theme: brand
-      text: API
+      text: API Reference
       link: /api
     - theme: alt
       text: Examples
       link: /examples
+    - theme: alt
+      text: Mocking
+      link: /mocking
+    - theme: alt
+      text: Results
+      link: /result
 
 features:
-  - title: Mock DML statements in Apex Tests
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Automatic rollback
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Avoid "Uncommitted work pending" error
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
+  - title: Mock DML Statements in Apex Tests
+    details: Built-in mocking support lets you test your code without database operations, making tests faster and more isolated.
+  - title: Comprehensive Results
+    details: Get detailed operation results including success/failure status, record IDs, and error information for each DML operation.
+  - title: Fluent API
+    details: Chain DML operations with a clean, readable syntax. Insert, update, upsert, delete, undelete, and publish platform events.
+  - title: Immediate Operations
+    details: Execute single DML operations immediately and get results without needing to call commitWork().
+  - title: Relationship Handling
+    details: Automatically resolve parent-child relationships across inserts. No need to manually assign IDs after parent inserts.
+  - title: Security Controls
+    details: Full support for User/System mode and With/Without Sharing, plus field-level security stripping.
 ---
 
