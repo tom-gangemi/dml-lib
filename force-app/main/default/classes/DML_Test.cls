@@ -3206,13 +3206,18 @@ private class DML_Test {
 		
 		// Test
 		Test.startTest();
+			Integer dmlStatementsBefore = Limits.getDMLStatements();
+
 			new DML()
 				.toInsert(account)
 				.dryRun();
+
+			Integer dmlStatementsAfter = Limits.getDMLStatements();
 		Test.stopTest();
 
 		// Verify
 		Assert.areEqual(0, [SELECT COUNT() FROM Account], 'Account should not be inserted.');
+		Assert.areEqual(4, dmlStatementsAfter - dmlStatementsBefore, 'DML statements should be 4, because one for savepoint, one for rollback, one for release savepoint, and one for the insert.');
 	}
 
 	@SuppressWarnings('PMD.ApexUnitTestClassShouldHaveAsserts')

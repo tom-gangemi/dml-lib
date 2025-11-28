@@ -15,6 +15,7 @@
     - [x] USER_MODE — enforce CRUD/FLS strictly; fail on violations with clear errors.
     - [x] SYSTEM_MODE — skip CRUD/FLS checks (still subject to validation rules)
     - [ ] stripInaccessible (?) — SANITIZE mode: apply Security.stripInaccessible(CREATABLE/UPDATABLE, records); record stripped fields in results.
+- [ ] upsert(recordToUpsert, externalIdField, allOrNone)
 - [ ] Configurable Sharing Mode
     - [x] Inherited sharing by default — keep DML.cls as inherited sharing
     - [x] with sharing
