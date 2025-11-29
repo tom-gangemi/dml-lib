@@ -4,6 +4,7 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: "DML Lib",
   description: "Apex DML Lib.",
+  head: [['link', { rel: 'icon', href: '/favicon.ico' }]],
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
@@ -19,6 +20,18 @@ export default defineConfig({
           { text: 'Mocking', link: '/mocking' },
           { text: 'Result', link: '/result' },
           { text: 'Examples', link: '/examples' }
+        ]
+      },
+      {
+        text: 'DMLs',
+        collapsed: false,
+        items: [
+          { text: 'Insert', link: '/dml/insert' },
+          { text: 'Update', link: '/dml/update' },
+          { text: 'Upsert', link: '/dml/upsert' },
+          { text: 'Delete', link: '/dml/delete' },
+          { text: 'Undelete', link: '/dml/undelete' },
+          { text: 'Publish', link: '/dml/publish' }
         ]
       }
     ],
