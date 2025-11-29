@@ -6,6 +6,22 @@ outline: deep
 
 Insert new records or update existing ones based on record ID.
 
+**Example**
+
+```apex
+Account existingAccount = [SELECT Id, Name FROM Account LIMIT 1];
+existingAccount.Name = 'Updated Name';
+
+Account newAccount = new Account(Name = 'New Account');
+
+new DML()
+    .toUpsert(existingAccount)
+    .toUpsert(newAccount)
+    .systemMode()
+    .withoutSharing()
+    .commitWork();
+```
+
 ## toUpsert
 
 Register records for upsert. The actual DML is executed when `commitWork()` is called.

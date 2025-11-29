@@ -6,6 +6,18 @@ outline: deep
 
 Publish platform events.
 
+**Example**
+
+```apex
+Account account = new Account(Name = 'New Account');
+MyEvent__e event = new MyEvent__e(Message__c = 'Account Created');
+
+new DML()
+    .toInsert(account)
+    .toPublish(event)
+    .commitWork();
+```
+
 ## toPublish
 
 Register platform events for publishing. The actual publish is executed when `commitWork()` is called.

@@ -6,6 +6,22 @@ outline: deep
 
 Update existing records in the database.
 
+**Example**
+
+```apex
+Account account = new Account(Name = 'New Parent');
+Contact contact = [SELECT Id FROM Contact LIMIT 1];
+
+new DML()
+    .toInsert(account)
+    .toUpdate(DML.Record(contact)
+        .withRelationship(Contact.AccountId, account)
+    )
+    .systemMode()
+    .withoutSharing()
+    .commitWork();
+```
+
 ## toUpdate
 
 Register records for update. The actual DML is executed when `commitWork()` is called.

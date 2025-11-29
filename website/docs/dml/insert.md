@@ -19,6 +19,22 @@ Commitable toInsert(Iterable<SObject> records);
 Commitable toInsert(DML.Records records);
 ```
 
+**Example**
+
+```apex
+Account account = new Account(Name = 'My Account');
+Contact contact = new Contact(LastName = 'Doe');
+
+new DML()
+    .toInsert(account)
+    .toInsert(DML.Record(contact)
+        .withRelationship(Contact.AccountId, account)
+    )
+    .systemMode()
+    .withoutSharing()
+    .commitWork();
+```
+
 ### Single Record
 
 **Signature**

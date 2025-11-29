@@ -6,6 +6,22 @@ outline: deep
 
 Delete records from the database.
 
+**Example**
+
+```apex
+Account account = [SELECT Id FROM Account LIMIT 1];
+Opportunity opportunity = [SELECT Id FROM Opportunity LIMIT 1];
+Lead lead = [SELECT Id FROM Lead LIMIT 1];
+
+new DML()
+    .toDelete(account)
+    .toDelete(opportunity)
+    .toDelete(lead)
+    .systemMode()
+    .withoutSharing()
+    .commitWork();
+```
+
 ## toDelete
 
 Register records for deletion. The actual DML is executed when `commitWork()` is called.

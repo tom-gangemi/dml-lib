@@ -6,6 +6,22 @@ outline: deep
 
 Restore deleted records from the recycle bin.
 
+**Example**
+
+```apex
+Account account = [SELECT Id FROM Account WHERE IsDeleted = true ALL ROWS LIMIT 1];
+Opportunity opportunity = [SELECT Id FROM Opportunity WHERE IsDeleted = true ALL ROWS LIMIT 1];
+Lead lead = [SELECT Id FROM Lead WHERE IsDeleted = true ALL ROWS LIMIT 1];
+
+new DML()
+    .toUndelete(account)
+    .toUndelete(opportunity)
+    .toUndelete(lead)
+    .systemMode()
+    .withoutSharing()
+    .commitWork();
+```
+
 ## toUndelete
 
 Register records for undeletion. The actual DML is executed when `commitWork()` is called.
