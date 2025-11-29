@@ -21,9 +21,14 @@ The `DML.mock()` and `DML.retrieveResultFor()` methods are `@TestVisible` and sh
 
 ```apex
 public class AccountService {
-    public void syncAccounts(List<Account> externalAccounts) {
+    public void syncAccounts() {
+        List<Account> accounts = new List<Account>{
+            new Account(Name = 'New Account'),
+            new Account(Name = 'Another Account')
+        };
+
         new DML()
-            .toUpsert(externalAccounts)
+            .toUpsert(accounts)
             .identifier('AccountService.syncAccounts')
             .commitWork();
     }
@@ -38,10 +43,7 @@ static void shouldSyncAccounts() {
 
     // Test
     Test.startTest();
-    new AccountService().syncAccounts(new List<Account>{
-        new Account(Name = 'New Account'),
-        new Account(Name = 'Another Account')
-    });
+    new AccountService().syncAccounts();
     Test.stopTest();
 
     // Verify

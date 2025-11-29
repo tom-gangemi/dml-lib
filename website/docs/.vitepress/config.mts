@@ -33,10 +33,7 @@ export default defineConfig({
       {
         text: 'Docs',
         items: [
-          { text: 'API', link: '/api' },
-          { text: 'Mocking', link: '/mocking' },
-          { text: 'Result', link: '/result' },
-          { text: 'Examples', link: '/examples' }
+          { text: 'Introduction', link: '/introduction' }
         ]
       },
       {
@@ -48,7 +45,8 @@ export default defineConfig({
           { text: 'Upsert', link: '/dml/upsert' },
           { text: 'Delete', link: '/dml/delete' },
           { text: 'Undelete', link: '/dml/undelete' },
-          { text: 'Publish', link: '/dml/publish' }
+          { text: 'Publish', link: '/dml/publish' },
+          { text: 'Result', link: '/result' }
         ]
       },
       {

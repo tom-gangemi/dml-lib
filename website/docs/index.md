@@ -9,16 +9,16 @@ hero:
   actions:
     - theme: brand
       text: API Reference
-      link: /api
-    - theme: alt
-      text: Examples
-      link: /examples
+      link: /dml/insert
     - theme: alt
       text: Mocking
-      link: /mocking
+      link: /mocking/insert
     - theme: alt
-      text: Results
-      link: /result
+      text: FLS
+      link: /configuration/field-level-security
+    - theme: alt
+      text: Sharing Mode
+      link: /configuration/sharing-mode
 
 features:
   - title: Mock DML Statements in Apex Tests

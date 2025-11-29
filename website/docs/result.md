@@ -8,20 +8,20 @@ The DML library provides comprehensive result handling through the `Result`, `Op
 
 ## Overview
 
-When you call `commitWork()`, `dryRun()`, or `hardCommitWork()`, a `Result` object is returned containing detailed information about each DML operation performed.
+When you call `commitWork()` or `dryRun()`, a `Result` object is returned containing detailed information about each DML operation performed.
 
-```apex title="Basic Result Usage"
+```apex
 DML.Result result = new DML()
     .toInsert(account)
     .toUpdate(contact)
     .commitWork();
 
 // Check results by operation type
-List<DML.OperationResult> insertResults = result.inserted();
-List<DML.OperationResult> updateResults = result.updated();
+List<DML.OperationResult> insertResults = result.inserts();
+List<DML.OperationResult> updateResults = result.updates();
 
 // Check results by SObject type
-DML.OperationResult accountInserts = result.inserted(Account.SObjectType);
+DML.OperationResult accountInserts = result.insertsOf(Account.SObjectType);
 ```
 
 ## Result Interface
@@ -32,22 +32,22 @@ The `Result` interface provides methods to access operation results.
 
 **Signature**
 
-```apex title="Method Signature"
+```apex
 List<OperationResult> all();
 ```
 
 **Example**
 
-```apex title="Get All Results"
+```apex
 DML.Result result = new DML()
     .toInsert(accounts)
     .toUpdate(contacts)
     .commitWork();
 
 for (DML.OperationResult opResult : result.all()) {
-    System.debug('Type: ' + opResult.getType());
-    System.debug('Object: ' + opResult.getObjectType());
-    System.debug('Succeeded: ' + opResult.succeededCount());
+    System.debug('Operation: ' + opResult.operationType());
+    System.debug('Object: ' + opResult.objectType());
+    System.debug('Has Failures: ' + opResult.hasFailures());
 }
 ```
 
@@ -55,25 +55,25 @@ for (DML.OperationResult opResult : result.all()) {
 
 **Signatures**
 
-```apex title="Method Signatures"
-List<OperationResult> inserted();
-List<OperationResult> updated();
-List<OperationResult> upserted();
-List<OperationResult> deleted();
-List<OperationResult> undeleted();
-List<OperationResult> published();
+```apex
+List<OperationResult> inserts();
+List<OperationResult> updates();
+List<OperationResult> upserts();
+List<OperationResult> deletes();
+List<OperationResult> undeletes();
+List<OperationResult> events();
 ```
 
 **Example**
 
-```apex title="Results by Operation Type"
+```apex
 DML.Result result = new DML()
     .toInsert(accounts)
     .toInsert(contacts)
     .commitWork();
 
 // Get all insert results (one per SObject type)
-List<DML.OperationResult> insertResults = result.inserted();
+List<DML.OperationResult> insertResults = result.inserts();
 
 Assert.areEqual(2, insertResults.size()); // Account and Contact
 ```
@@ -82,26 +82,26 @@ Assert.areEqual(2, insertResults.size()); // Account and Contact
 
 **Signatures**
 
-```apex title="Method Signatures"
-OperationResult inserted(Schema.SObjectType objectType);
-OperationResult updated(Schema.SObjectType objectType);
-OperationResult upserted(Schema.SObjectType objectType);
-OperationResult deleted(Schema.SObjectType objectType);
-OperationResult undeleted(Schema.SObjectType objectType);
-OperationResult published(Schema.SObjectType objectType);
+```apex
+OperationResult insertsOf(Schema.SObjectType objectType);
+OperationResult updatesOf(Schema.SObjectType objectType);
+OperationResult upsertsOf(Schema.SObjectType objectType);
+OperationResult deletesOf(Schema.SObjectType objectType);
+OperationResult undeletesOf(Schema.SObjectType objectType);
+OperationResult eventsOf(Schema.SObjectType objectType);
 ```
 
 **Example**
 
-```apex title="Results by SObject Type"
+```apex
 DML.Result result = new DML()
     .toInsert(accounts)
     .toInsert(contacts)
     .commitWork();
 
 // Get insert results for Accounts only
-DML.OperationResult accountResults = result.inserted(Account.SObjectType);
-DML.OperationResult contactResults = result.inserted(Contact.SObjectType);
+DML.OperationResult accountResults = result.insertsOf(Account.SObjectType);
+DML.OperationResult contactResults = result.insertsOf(Contact.SObjectType);
 ```
 
 ## OperationResult Interface
@@ -112,42 +112,38 @@ The `OperationResult` interface provides detailed information about a specific D
 
 **Signatures**
 
-```apex title="Method Signatures"
-Type getType();                      // DML operation type (INSERT_DML, UPDATE_DML, etc.)
-Schema.SObjectType getObjectType();  // SObject type for this operation
-Boolean hasFailures();               // True if any records failed
-Integer requestedCount();            // Total records submitted
-Integer succeededCount();            // Records that succeeded
-Integer failedCount();               // Records that failed
-List<SObject> records();             // The actual SObject records
-List<RecordResult> getRecordResults(); // Individual record results
+```apex
+OperationType operationType();      // DML operation type (INSERT_DML, UPDATE_DML, etc.)
+Schema.SObjectType objectType();    // SObject type for this operation
+Boolean hasFailures();              // True if any records failed
+List<Error> errors();               // All errors from failed records
+List<SObject> records();            // All records that were processed
+List<SObject> successes();          // Records that succeeded
+List<SObject> failures();           // Records that failed
+List<RecordResult> recordResults(); // Individual record results
 ```
 
 **Example**
 
-```apex title="Using OperationResult"
+```apex
 DML.Result result = new DML()
     .toInsert(accounts)
     .commitWork();
 
-DML.OperationResult opResult = result.inserted(Account.SObjectType);
+DML.OperationResult opResult = result.insertsOf(Account.SObjectType);
 
 // Operation metadata
-Assert.areEqual(DML.Type.INSERT_DML, opResult.getType());
-Assert.areEqual(Account.SObjectType, opResult.getObjectType());
-
-// Success/failure counts
-System.debug('Requested: ' + opResult.requestedCount());
-System.debug('Succeeded: ' + opResult.succeededCount());
-System.debug('Failed: ' + opResult.failedCount());
+Assert.areEqual(DML.OperationType.INSERT_DML, opResult.operationType());
+Assert.areEqual(Account.SObjectType, opResult.objectType());
 
 // Check for failures
 if (opResult.hasFailures()) {
-    System.debug('Some records failed!');
+    List<SObject> failedRecords = opResult.failures();
+    List<DML.Error> allErrors = opResult.errors();
 }
 
-// Access records
-List<SObject> processedRecords = opResult.records();
+// Get successful records
+List<SObject> successfulRecords = opResult.successes();
 ```
 
 ## RecordResult Interface
@@ -158,29 +154,31 @@ The `RecordResult` interface provides information about individual record proces
 
 **Signatures**
 
-```apex title="Method Signatures"
-Id getId();                  // Record ID (assigned after insert)
-Boolean isSuccess();         // True if this record succeeded
-List<Error> getErrors();     // List of errors for this record
+```apex
+Id id();                  // Record ID (assigned after insert)
+SObject record();         // The actual SObject record
+Boolean isSuccess();      // True if this record succeeded
+List<Error> errors();     // List of errors for this record
 ```
 
 **Example**
 
-```apex title="Using RecordResult"
+```apex
 DML.Result result = new DML()
     .toInsert(accounts)
     .allowPartialSuccess()
     .commitWork();
 
-DML.OperationResult opResult = result.inserted(Account.SObjectType);
+DML.OperationResult opResult = result.insertsOf(Account.SObjectType);
 
-for (DML.RecordResult recordResult : opResult.getRecordResults()) {
+for (DML.RecordResult recordResult : opResult.recordResults()) {
     if (recordResult.isSuccess()) {
-        System.debug('Record inserted with Id: ' + recordResult.getId());
+        System.debug('Record inserted with Id: ' + recordResult.id());
+        System.debug('Record: ' + recordResult.record());
     } else {
         System.debug('Record failed:');
-        for (DML.Error error : recordResult.getErrors()) {
-            System.debug('  - ' + error.getMessage());
+        for (DML.Error error : recordResult.errors()) {
+            System.debug('  - ' + error.message());
         }
     }
 }
@@ -194,53 +192,49 @@ The `Error` interface provides details about DML errors.
 
 **Signatures**
 
-```apex title="Method Signatures"
-String getMessage();              // Error message
-System.StatusCode getStatusCode(); // Status code (e.g., REQUIRED_FIELD_MISSING)
-List<String> getFields();         // Fields that caused the error
+```apex
+String message();               // Error message
+System.StatusCode statusCode(); // Status code (e.g., REQUIRED_FIELD_MISSING)
+List<String> fields();          // Fields that caused the error
 ```
 
 **Example**
 
-```apex title="Using Error"
+```apex
 DML.Result result = new DML()
     .toInsert(accounts)
     .allowPartialSuccess()
     .commitWork();
 
 for (DML.OperationResult opResult : result.all()) {
-    for (DML.RecordResult recordResult : opResult.getRecordResults()) {
-        for (DML.Error error : recordResult.getErrors()) {
-            System.debug('Error Message: ' + error.getMessage());
-            System.debug('Status Code: ' + error.getStatusCode());
-            System.debug('Fields: ' + error.getFields());
-        }
+    for (DML.Error error : opResult.errors()) {
+        System.debug('Error Message: ' + error.message());
+        System.debug('Status Code: ' + error.statusCode());
+        System.debug('Fields: ' + error.fields());
     }
 }
 ```
 
-## DML Type Enum
+## OperationType Enum
 
-The `DML.Type` enum identifies the type of DML operation.
+The `DML.OperationType` enum identifies the type of DML operation.
 
 **Values**
 
-```apex title="DML.Type Values"
-DML.Type.INSERT_DML
-DML.Type.UPDATE_DML
-DML.Type.UPSERT_DML
-DML.Type.DELETE_DML
-DML.Type.UNDELETE_DML
-DML.Type.HARD_DELETE_DML
-DML.Type.MERGE_DML
-DML.Type.PUBLISH_DML
+```apex
+DML.OperationType.INSERT_DML
+DML.OperationType.UPDATE_DML
+DML.OperationType.UPSERT_DML
+DML.OperationType.DELETE_DML
+DML.OperationType.UNDELETE_DML
+DML.OperationType.PUBLISH_DML
 ```
 
 ## Complete Examples
 
 ### Basic Insert with Result
 
-```apex title="Insert with Result"
+```apex
 Account account = new Account(Name = 'Test Account');
 
 DML.Result result = new DML()
@@ -248,26 +242,26 @@ DML.Result result = new DML()
     .commitWork();
 
 // Verify result
-Assert.areEqual(1, result.inserted().size());
+Assert.areEqual(1, result.inserts().size());
 
-DML.OperationResult opResult = result.inserted(Account.SObjectType);
-Assert.areEqual(1, opResult.requestedCount());
-Assert.areEqual(1, opResult.succeededCount());
-Assert.areEqual(0, opResult.failedCount());
+DML.OperationResult opResult = result.insertsOf(Account.SObjectType);
+Assert.areEqual(1, opResult.records().size());
+Assert.areEqual(1, opResult.successes().size());
+Assert.areEqual(0, opResult.failures().size());
 Assert.isFalse(opResult.hasFailures());
-Assert.areEqual(DML.Type.INSERT_DML, opResult.getType());
-Assert.areEqual(Account.SObjectType, opResult.getObjectType());
+Assert.areEqual(DML.OperationType.INSERT_DML, opResult.operationType());
+Assert.areEqual(Account.SObjectType, opResult.objectType());
 
 // Check record result
-DML.RecordResult recordResult = opResult.getRecordResults()[0];
+DML.RecordResult recordResult = opResult.recordResults()[0];
 Assert.isTrue(recordResult.isSuccess());
-Assert.isNotNull(recordResult.getId());
-Assert.areEqual(account.Id, recordResult.getId());
+Assert.isNotNull(recordResult.id());
+Assert.areEqual(account.Id, recordResult.id());
 ```
 
 ### Partial Success Handling
 
-```apex title="Partial Success"
+```apex
 List<Account> accounts = new List<Account>{
     new Account(Name = 'Valid Account 1'),
     new Account(), // Missing required Name
@@ -279,26 +273,24 @@ DML.Result result = new DML()
     .allowPartialSuccess()
     .commitWork();
 
-DML.OperationResult opResult = result.inserted(Account.SObjectType);
+DML.OperationResult opResult = result.insertsOf(Account.SObjectType);
 
 // Check counts
-Assert.areEqual(3, opResult.requestedCount());
-Assert.areEqual(2, opResult.succeededCount());
-Assert.areEqual(1, opResult.failedCount());
+Assert.areEqual(3, opResult.records().size());
+Assert.areEqual(2, opResult.successes().size());
+Assert.areEqual(1, opResult.failures().size());
 Assert.isTrue(opResult.hasFailures());
 
 // Process individual results
-for (Integer i = 0; i < opResult.getRecordResults().size(); i++) {
-    DML.RecordResult rr = opResult.getRecordResults()[i];
-    
+for (DML.RecordResult rr : opResult.recordResults()) {
     if (rr.isSuccess()) {
-        System.debug('Record ' + i + ' succeeded with Id: ' + rr.getId());
+        System.debug('Record succeeded with Id: ' + rr.id());
     } else {
-        System.debug('Record ' + i + ' failed:');
-        for (DML.Error error : rr.getErrors()) {
-            System.debug('  Status: ' + error.getStatusCode());
-            System.debug('  Message: ' + error.getMessage());
-            System.debug('  Fields: ' + error.getFields());
+        System.debug('Record failed:');
+        for (DML.Error error : rr.errors()) {
+            System.debug('  Status: ' + error.statusCode());
+            System.debug('  Message: ' + error.message());
+            System.debug('  Fields: ' + error.fields());
         }
     }
 }
@@ -306,7 +298,7 @@ for (Integer i = 0; i < opResult.getRecordResults().size(); i++) {
 
 ### Multiple Operation Types
 
-```apex title="Multiple Operations"
+```apex
 Account account = new Account(Name = 'New Account');
 Contact existingContact = [SELECT Id, FirstName FROM Contact LIMIT 1];
 existingContact.FirstName = 'Updated';
@@ -319,19 +311,19 @@ DML.Result result = new DML()
     .commitWork();
 
 // Check each operation type
-Assert.areEqual(1, result.inserted().size());
-Assert.areEqual(1, result.updated().size());
-Assert.areEqual(1, result.deleted().size());
+Assert.areEqual(1, result.inserts().size());
+Assert.areEqual(1, result.updates().size());
+Assert.areEqual(1, result.deletes().size());
 
 // Verify specific results
-Assert.isFalse(result.inserted(Account.SObjectType).hasFailures());
-Assert.isFalse(result.updated(Contact.SObjectType).hasFailures());
-Assert.isFalse(result.deleted(Lead.SObjectType).hasFailures());
+Assert.isFalse(result.insertsOf(Account.SObjectType).hasFailures());
+Assert.isFalse(result.updatesOf(Contact.SObjectType).hasFailures());
+Assert.isFalse(result.deletesOf(Lead.SObjectType).hasFailures());
 ```
 
 ### Multiple SObject Types Same Operation
 
-```apex title="Multiple Types Same Operation"
+```apex
 Account account = new Account(Name = 'Test Account');
 Contact contact = new Contact(FirstName = 'Test', LastName = 'Contact');
 Lead lead = new Lead(FirstName = 'Test', LastName = 'Lead', Company = 'Test Co');
@@ -343,18 +335,18 @@ DML.Result result = new DML()
     .commitWork();
 
 // Get all insert results (3 - one per SObject type)
-List<DML.OperationResult> insertResults = result.inserted();
+List<DML.OperationResult> insertResults = result.inserts();
 Assert.areEqual(3, insertResults.size());
 
 // Get specific SObject type results
-Assert.areEqual(1, result.inserted(Account.SObjectType).requestedCount());
-Assert.areEqual(1, result.inserted(Contact.SObjectType).requestedCount());
-Assert.areEqual(1, result.inserted(Lead.SObjectType).requestedCount());
+Assert.areEqual(1, result.insertsOf(Account.SObjectType).records().size());
+Assert.areEqual(1, result.insertsOf(Contact.SObjectType).records().size());
+Assert.areEqual(1, result.insertsOf(Lead.SObjectType).records().size());
 ```
 
 ### Dry Run Results
 
-```apex title="Dry Run"
+```apex
 Account account = new Account(Name = 'Test Account');
 
 DML.Result result = new DML()
@@ -362,8 +354,8 @@ DML.Result result = new DML()
     .dryRun();
 
 // Result is returned but database is rolled back
-Assert.areEqual(1, result.inserted().size());
-Assert.isFalse(result.inserted(Account.SObjectType).hasFailures());
+Assert.areEqual(1, result.inserts().size());
+Assert.isFalse(result.insertsOf(Account.SObjectType).hasFailures());
 
 // No records in database
 Assert.areEqual(0, [SELECT COUNT() FROM Account WHERE Name = 'Test Account']);
@@ -371,7 +363,7 @@ Assert.areEqual(0, [SELECT COUNT() FROM Account WHERE Name = 'Test Account']);
 
 ### Accessing Records from Results
 
-```apex title="Accessing Records"
+```apex
 List<Account> accounts = new List<Account>{
     new Account(Name = 'Account 1'),
     new Account(Name = 'Account 2'),
@@ -383,20 +375,23 @@ DML.Result result = new DML()
     .commitWork();
 
 // Get the records that were processed
-List<SObject> processedRecords = result.inserted(Account.SObjectType).records();
+List<SObject> processedRecords = result.insertsOf(Account.SObjectType).records();
 
 // They're the same references, so IDs are populated
 Assert.areEqual(3, processedRecords.size());
 for (SObject record : processedRecords) {
     Assert.isNotNull(record.Id);
 }
+
+// Get only successful records
+List<SObject> successfulRecords = result.insertsOf(Account.SObjectType).successes();
 ```
 
 ## Best Practices
 
 ### Always Check for Failures
 
-```apex title="Check Failures"
+```apex
 DML.Result result = new DML()
     .toInsert(records)
     .allowPartialSuccess()
@@ -405,14 +400,16 @@ DML.Result result = new DML()
 for (DML.OperationResult opResult : result.all()) {
     if (opResult.hasFailures()) {
         // Handle failures appropriately
-        logFailures(opResult);
+        for (DML.Error error : opResult.errors()) {
+            System.debug('Error: ' + error.message());
+        }
     }
 }
 ```
 
 ### Use Results for Verification in Tests
 
-```apex title="Test Verification"
+```apex
 @IsTest
 static void testAccountCreation() {
     Account account = new Account(Name = 'Test');
@@ -422,28 +419,13 @@ static void testAccountCreation() {
         .commitWork();
     
     // Use result for comprehensive assertions
-    DML.OperationResult opResult = result.inserted(Account.SObjectType);
+    DML.OperationResult opResult = result.insertsOf(Account.SObjectType);
     
-    Assert.areEqual(1, opResult.requestedCount());
-    Assert.areEqual(1, opResult.succeededCount());
-    Assert.areEqual(0, opResult.failedCount());
+    Assert.areEqual(1, opResult.records().size());
+    Assert.areEqual(1, opResult.successes().size());
+    Assert.areEqual(0, opResult.failures().size());
     Assert.isFalse(opResult.hasFailures());
-    Assert.areEqual(DML.Type.INSERT_DML, opResult.getType());
-    Assert.isNotNull(opResult.getRecordResults()[0].getId());
+    Assert.areEqual(DML.OperationType.INSERT_DML, opResult.operationType());
+    Assert.isNotNull(opResult.recordResults()[0].id());
 }
 ```
-
-### Handle Empty Results Gracefully
-
-```apex title="Empty Results"
-DML.Result result = new DML()
-    .toInsert(accounts)
-    .commitWork();
-
-// Returns an empty OperationResult if no operations for that type
-DML.OperationResult updateResult = result.updated(Account.SObjectType);
-Assert.areEqual(0, updateResult.requestedCount()); // Returns 0, not null
-```
-
-
-
