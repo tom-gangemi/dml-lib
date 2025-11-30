@@ -1,4 +1,4 @@
-# DML Lib (Beta)
+# DML Lib
 
 <div align="center">
   <a href="https://soql.beyondthecloud.dev">
