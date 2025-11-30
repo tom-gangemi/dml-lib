@@ -19,9 +19,6 @@
 
 # Getting Started
 
-> [!CAUTION]
-> DML Lib is currently in Beta testing. This means that method signatures can change.
-
 The DML Lib provides functional constructs for DML statements in Apex.
 
 For more details, please refer to the [documentation](https://dml.beyondthecloud.dev).
@@ -43,8 +40,6 @@ new DML()
     .toUpdate(new Account(Id = account.Id, Name = 'New Name'))
     .commitWork();
 ```
-
-
 
 ## License notes:
 - For proper license management each repository should contain LICENSE file similar to this one.
