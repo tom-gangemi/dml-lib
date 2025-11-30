@@ -231,6 +231,10 @@ OperationResult updateImmediately(List<SObject> records);
 OperationResult updateImmediately(DML.Records records);
 ```
 
+::: tip
+All DML settings configured on the `DML` instance (such as `userMode()`, `systemMode()`, `withSharing()`, `withoutSharing()`, `allowPartialSuccess()`) are inherited when executing `updateImmediately`.
+:::
+
 ### Single Record
 
 **Signature**

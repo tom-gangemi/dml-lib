@@ -153,6 +153,10 @@ OperationResult undeleteImmediately(Iterable<Id> recordIds);
 OperationResult undeleteImmediately(List<SObject> records);
 ```
 
+::: tip
+All DML settings configured on the `DML` instance (such as `userMode()`, `systemMode()`, `withSharing()`, `withoutSharing()`, `allowPartialSuccess()`) are inherited when executing `undeleteImmediately`.
+:::
+
 ### Single Record
 
 **Signature**

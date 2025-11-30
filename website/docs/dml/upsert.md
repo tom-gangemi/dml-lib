@@ -247,6 +247,10 @@ OperationResult upsertImmediately(List<SObject> records);
 OperationResult upsertImmediately(DML.Records records);
 ```
 
+::: tip
+All DML settings configured on the `DML` instance (such as `userMode()`, `systemMode()`, `withSharing()`, `withoutSharing()`, `allowPartialSuccess()`) are inherited when executing `upsertImmediately`.
+:::
+
 ### Single Record
 
 **Signature**

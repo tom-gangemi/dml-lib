@@ -244,6 +244,10 @@ OperationResult insertImmediately(List<SObject> records);
 OperationResult insertImmediately(DML.Records records);
 ```
 
+::: tip
+All DML settings configured on the `DML` instance (such as `userMode()`, `systemMode()`, `withSharing()`, `withoutSharing()`, `allowPartialSuccess()`) are inherited when executing `insertImmediately`.
+:::
+
 ### Single Record
 
 **Signature**

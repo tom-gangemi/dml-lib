@@ -132,6 +132,10 @@ OperationResult publishImmediately(SObject record);
 OperationResult publishImmediately(List<SObject> records);
 ```
 
+::: tip
+All DML settings configured on the `DML` instance (such as `allowPartialSuccess()`) are inherited when executing `publishImmediately`.
+:::
+
 ### Single Event
 
 **Signature**
