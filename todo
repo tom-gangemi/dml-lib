@@ -10,19 +10,20 @@
 - [ ] General and per-operation overrides e.g. new DML(options), registerInsert(..., options) 
 - [ ] allow allOrNone, DMLOptions, and SecurityMode per op; merge overrides over UoW defaults.
 - [x] Update list of records at once e.g accounts.with(Account.Unit, 'test') - DML.Records(records).with(field, value)
-- [ ] Static DML eg. DML.Global.toInsert(); DML.Global.commitWork(); DML.Shared.toInsert();
+- [x] Static DML eg. DML.Global.toInsert(); DML.Global.commitWork(); DML.Shared.toInsert();
 - [x] Field-Level Security
     - [x] USER_MODE — enforce CRUD/FLS strictly; fail on violations with clear errors.
     - [x] SYSTEM_MODE — skip CRUD/FLS checks (still subject to validation rules)
     - [ ] stripInaccessible (?) — SANITIZE mode: apply Security.stripInaccessible(CREATABLE/UPDATABLE, records); record stripped fields in results.
-- [ ] upsert(recordToUpsert, externalIdField, allOrNone)
+- [ ] Upsert with external ID field — .toUpsert(record, externalIdField) or DML.Record(record).withExternalId(field)
 - [ ] Configurable Sharing Mode
     - [x] Inherited sharing by default — keep DML.cls as inherited sharing
     - [x] with sharing
     - [x] without sharing
     - [ ] Sharing mode configurable per operation (?)
-- [ ] Relatonships
-    - [ ] Explicit dependency ordering — guarantee parents insert before children; deletes run child-first. Accept/derive a type order graph (parents → children) so inserts/upserts happen in safe sequence even if registered out of order; apply lookup values just-in-time before child insert/upsert.
+- [ ] Relationships
+    - [x] Deferred relationship resolution — resolve lookups just-in-time during commit (like fflib), not at registration time.
+    - [ ] Automatic dependency ordering — parents insert before children; deletes child-first; derive order from relationships if not explicit.
 - [ ] Preview mode or debug mode (?) - dry-run uow.preview() shows per-type op counts, fields to mutate, effective chunk size/allOrNone/security mode, and pending relationships; no DML.
 - [ ] Retry strategy — optional, 
     - [ ] bounded retry on UNABLE_TO_LOCK_ROW, 
@@ -35,8 +36,8 @@ dml.withRetryPolicy(new RetryPolicy()
   .splitOnRetry(true)); // split chunk into smaller pieces when retrying
 ```
 - [ ] Mocking
-    - [ ] Mock Ids — generator produces valid 18-char Ids with correct key prefix; assign only in fake provider.
-    - [ ] Registry of number of inserted records — per type & per batch counters.
+    - [x] Mock Ids — generator produces valid 18-char Ids with correct key prefix; assign only in fake provider.
+    - [x] Registry of number of inserted records — per type & per batch counters.
     - [ ] Registry of issued DML for each operation — capture exact batches for insert/update/upsert/delete/etc.
     - [ ] DML Counter — total DML statements and rows processed; expose via results.
     - [ ] Mock Errors - mock different DML errors.
@@ -55,15 +56,16 @@ dml.withRetryPolicy(new RetryPolicy()
     - [x] upsert
     - [x] delete
     - [x] undelete
-    - [ ] harddelete (soft delete + emptyRecycleBin)
-    - [ ] merge (surface MergeResult[])
-    - [ ] publish event (__e queued and published during commit; include outcomes)
-- [ ] Return Database.Result or some other wrapper — return UowResult with per-op DmlOutcome, raw SaveResult[]/DeleteResult[]/MergeResult[], limits snapshot, events, retries.
-- [] Commit hooks - `DML.Hook`
+    - [x] publish event
+    - [ ] hardDelete (delete + Database.emptyRecycleBin)
+    - [ ] merge (Database.merge → MergeResult[])
+    - [ ] convertLead (Database.convertLead → LeadConvertResult[])
+- [x] Return Database.Result or some other wrapper — return UowResult with per-op DmlOutcome, raw SaveResult[]/DeleteResult[]/MergeResult[], limits snapshot, events, retries.
+- [ ] Commit hooks - `DML.Hook`
     - [x] Before commit hook — pure in-memory prep (e.g., finalize patches) before any DML.
     - [x] After commit hook — enqueue async work / notifications; fires only if commit succeeds.
     - [ ] before hook should got the list of records to be inserted
-    - [ ] after hook should get the results
+    - [x] after hook should get the results
 - [ ] 100% code coverage — tests for happy/error paths, CRUD/FLS modes, DmlOptions, chunking, lock-retry, preview, hooks, mocking registries, and relationship ordering.
 - [ ] Trigger bypass adapter(optional) — new apex class DML.Bypass interface that will get sobjectType and based on it can have logic to bypass different triggers
 - [ ] Chunk Size — protect against DML row/CPU limits. uow.withChunkSize(200) (default 200) to mimic trigger batch sizes and reduce recursion; auto-downshift on retries if enabled.
@@ -93,14 +95,19 @@ class UowResult {
   public List<RetryEvent> retries;          // lock retry trace
 }
 ```
-- [ ] Discard changes after commitWork()
-- [ ] Connector to SOQL Lib — inject selectors/repositories for any reads inside commit (dedupe, external-id resolution); selectors honor chosen sharing mode.
+- [x] discardWork() — clear all pending operations without committing.
+- [ ] Clear internal state after commitWork() — prevent re-commit of same operations.
+- [ ] Query operations — query(), countQuery(), getQueryLocator(), getCursor() with same access/sharing mode.
+- [ ] Connector to SOQL Lib — inject selectors for reads; honor chosen sharing mode.
 - [ ] Dedupling registration — when records with the same Id are registered and modify the same field: policy LAST_WINS | THROW; track warnings when deduping occurs.
 - [ ] Observability hooks — uow.withLogger(ILogger) to emit timings, limits, retries, per-op summaries; keep lightweight to avoid CPU spikes.
-- [ ] Dependency graph
-    - [ ] Try to do as less DMLs as possible
-    - [ ] Try to build dependency graph between objects (tree?)
-- [ ] insertImmediately, updateImmediately, etc.
+- [ ] DML optimization
+    - [ ] Minimize DML statements — batch same-type operations.
+    - [ ] Build dependency graph — derive parent/child order from registered relationships.
+- [x] insertImmediately, updateImmediately, etc.
+- [ ] Email integration — toSendEmail(Messaging.Email) sent during commit.
+- [ ] Custom work (IDoWork) — registerWork(DML.Work) for custom logic during commit.
+- [ ] Lifecycle hooks — onCommitWorkStarting(), onDMLFinished(), onCommitWorkFinished(success) for subclass overrides.
 ---
 
 ```java
@@ -196,3 +203,25 @@ public interface Mockable {
 	}
 
 ```
+
+---
+
+## Priority Matrix
+
+| Priority | Feature | Effort | Impact |
+|----------|---------|--------|--------|
+| 🔴 Critical | Deferred Relationship Resolution | High | Very High |
+| 🔴 Critical | Automatic Dependency Ordering | High | Very High |
+| 🔴 Critical | Merge Operations | Medium | High |
+| 🔴 Critical | Hard Delete | Low | Medium |
+| 🔴 Critical | Discard Work | Low | Medium |
+| 🟡 Important | Upsert with External ID | Medium | High |
+| 🟡 Important | Lead Conversion | Medium | Medium |
+| 🟡 Important | Per-Operation Overrides | High | High |
+| 🟡 Important | Email Integration | Medium | Medium |
+| 🟡 Important | Custom Work (IDoWork) | Low | Medium |
+| 🟢 Nice | Better Mock API with Errors | Medium | Medium |
+| 🟢 Nice | Retry Strategy | High | Medium |
+| 🟢 Nice | Chunk Size | Medium | Medium |
+| 🟢 Nice | Query Integration | Medium | Low |
+| 🟢 Nice | Lifecycle Hooks | Medium | Low |

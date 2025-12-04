@@ -2,7 +2,7 @@
  * Copyright (c) 2025 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/dml-lib/blob/main/LICENSE)
  *
- * v1.7.0
+ * v1.8.0
  *
  * PMD False Positives:
  * - MethodNamingConventions - Some methods are uppercase to indicate that they are "constructors" of othere internal classes
@@ -117,6 +117,7 @@ public inherited sharing class DML implements Commitable {
 		Commitable allowPartialSuccess();
 		Commitable skipDuplicateRules();
 		Commitable options(Database.DmlOptions options);
+		Commitable discardWork();
 		Commitable commitHook(DML.Hook callback);
 		// Save
 		Result dryRun();
@@ -228,7 +229,7 @@ public inherited sharing class DML implements Commitable {
 
 	public interface Hook {
 		void before();
-		void after();
+		void after(Result result);
 	}
 
 	// Implementation
@@ -530,6 +531,11 @@ public inherited sharing class DML implements Commitable {
 		return this;
 	}
 
+	public Commitable discardWork() {
+		this.reset();
+		return this;
+	}
+
 	// Hooks
 
 	public Commitable commitHook(Hook callback) {
@@ -545,7 +551,7 @@ public inherited sharing class DML implements Commitable {
 
 			DMLResult result = this.executeOperations();
 
-			this.hook?.after();
+			this.hook?.after(result);
 
 			return result;
 		} catch (Exception e) {
@@ -566,7 +572,7 @@ public inherited sharing class DML implements Commitable {
 
 			dmlIdentifierToResult.put(this.configuration.dmlIdentifier, result);
 
-			this.hook?.after();
+			this.hook?.after(result);
 		} catch (Exception e) {
 			throw e;
 		} finally {
