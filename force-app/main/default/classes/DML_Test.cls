@@ -3186,6 +3186,29 @@ private class DML_Test {
 		Assert.areEqual(4, dmlStatementsAfter - dmlStatementsBefore, 'DML statements should be 4, because one for savepoint, one for rollback, one for release savepoint, and one for the insert.');
 	}
 
+	@IsTest
+	static void dryRunWhenExceptionIsThrown() {
+		// Setup
+		Account account = getAccount(1);
+		account.Name = null;
+		
+		Exception expectedException = null;
+		
+		// Test
+		Test.startTest();
+			try {
+				new DML()
+					.toInsert(account)
+					.dryRun();
+			} catch (Exception e) {
+				expectedException = e;
+			}
+		Test.stopTest();
+
+		// Verify
+		Assert.isNotNull(expectedException, 'Expected exception should be thrown.');
+	}
+
 	@SuppressWarnings('PMD.ApexUnitTestClassShouldHaveAsserts')
 	@IsTest
 	static void preview() {
@@ -3219,6 +3242,29 @@ private class DML_Test {
 		// Verify
 		Assert.areEqual(1, [SELECT COUNT() FROM Account], 'Account should be inserted.');
 		Assert.isTrue(dmlStatementsAfter - dmlStatementsBefore >= 3, 'DML statements should be greater than or equal to 3, because savepoint was set and rollback was called.');
+	}
+
+	@IsTest
+	static void commitTransactionWhenExceptionIsThrown() {
+		// Setup
+		Account account = getAccount(1);
+		account.Name = null;
+		
+		Exception expectedException = null;
+
+		// Test
+		Test.startTest();
+			try {
+				new DML()
+					.toInsert(account)
+					.commitTransaction();
+			} catch (Exception e) {
+				expectedException = e;
+			}
+		Test.stopTest();
+
+		// Verify
+		Assert.isNotNull(expectedException, 'Expected exception should be thrown.');
 	}
 
 	@IsTest
@@ -3816,6 +3862,25 @@ private class DML_Test {
 
 		// Verify
 		Assert.areEqual(1, [SELECT COUNT() FROM Account], 'Only one account should be inserted, because one has missing required field.');
+	}
+
+	@IsTest
+	static void skipDuplicateRules() {
+		// Setup
+		Account account = getAccount(1);
+		Account duplicateAccount = new Account(Name = account.Name);
+
+		// Test
+		Test.startTest();
+			new DML()
+				.toInsert(account)
+				.toInsert(duplicateAccount)
+				.skipDuplicateRules()
+				.commitWork();
+		Test.stopTest();
+
+		// Verify
+		Assert.areEqual(2, [SELECT COUNT() FROM Account], 'Both accounts should be inserted, because skipDuplicateRules is true.');
 	}
 
 	@IsTest
