@@ -43,6 +43,25 @@ new DML()
     .commitWork();
 ```
 
+## Deploy to Salesforce
+
+<a href="https://githubsfdeploy.herokuapp.com?owner=beyond-the-cloud-dev&repo=dml-lib&ref=main">
+  <img alt="Deploy to Salesforce"
+       src="https://raw.githubusercontent.com/afawcett/githubsfdeploy/master/deploy.png">
+</a>
+
+## Documentation
+
+Visit the [documentation](https://dml.beyondthecloud.dev) to view the full documentation.
+
+## Contributors
+
+<a href="https://github.com/beyond-the-cloud-dev/dml-lib/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=beyond-the-cloud-dev/dml-lib" />
+</a>
+
+
 ## License notes:
+
 - For proper license management each repository should contain LICENSE file similar to this one.
 - each original class should contain copyright mark: © Copyright 2025, Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
