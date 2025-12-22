@@ -4,7 +4,9 @@
   "main": "index.js",
   "license": "MIT",
   "devDependencies": {
-    "vitepress": "1.1.3"
+    "mermaid": "^11.12.2",
+    "vitepress": "1.1.3",
+    "vitepress-plugin-mermaid": "^2.0.17"
   },
   "scripts": {
     "dev": "vitepress dev docs",

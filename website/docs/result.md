@@ -4,11 +4,15 @@ outline: deep
 
 # Result
 
-The DML library provides comprehensive result handling through the `Result`, `OperationResult`, `RecordResult`, and `Error` interfaces. These allow you to inspect the outcome of DML operations, including success/failure status, record IDs, and error details.
+The DML library provides comprehensive result handling through the [`Result`](#result-interface), [`OperationResult`](#operationresult-interface), [`RecordResult`](#recordresult-interface), and [`Error`](#error-interface) interfaces. These allow you to inspect the outcome of DML operations, including success/failure status, record IDs, and error details.
 
 ## Overview
 
-When you call `commitWork()` or `dryRun()`, a `Result` object is returned containing detailed information about each DML operation performed.
+When you call `commitWork()`, `commitTransaction()` or `dryRun()`, a `Result` object is returned containing detailed information about each DML operation performed.
+
+::: info
+`Result` is returned only when **no errors occur** or `allowPartialSuccess()` is enabled. Otherwise, a `DmlException` will be thrown, which mimcs standard DML behaviour.
+:::
 
 ```apex
 DML.Result result = new DML()
@@ -22,6 +26,54 @@ List<DML.OperationResult> updateResults = result.updates();
 
 // Check results by SObject type
 DML.OperationResult accountInserts = result.insertsOf(Account.SObjectType);
+```
+
+```mermaid
+erDiagram
+    Result ||--o{ OperationResult : "1:n"
+    OperationResult ||--o{ RecordResult : "1:n"
+    RecordResult ||--o{ Error : "1:n"
+
+    Result {
+        List~OperationResult~ all()
+        List~OperationResult~ inserts()
+        List~OperationResult~ updates()
+        List~OperationResult~ upserts()
+        List~OperationResult~ deletes()
+        List~OperationResult~ undeletes()
+        List~OperationResult~ merges()
+        List~OperationResult~ events()
+        OperationResult insertsOf(SObjectType)
+        OperationResult updatesOf(SObjectType)
+        OperationResult upsertsOf(SObjectType)
+        OperationResult deletesOf(SObjectType)
+        OperationResult undeletesOf(SObjectType)
+        OperationResult mergesOf(SObjectType)
+        OperationResult eventsOf(SObjectType)
+    }
+
+    OperationResult {
+        OperationType operationType()
+        SObjectType objectType()
+        Boolean hasFailures()
+        List~SObject~ successes()
+        List~SObject~ failures()
+        List~RecordResult~ recordResults()
+        List~Error~ errors()
+    }
+
+    RecordResult {
+        Id id()
+        SObject record()
+        Boolean isSuccess()
+        List~Error~ errors()
+    }
+
+    Error {
+        String message()
+        StatusCode statusCode()
+        List~String~ fields()
+    }
 ```
 
 ## Result Interface
