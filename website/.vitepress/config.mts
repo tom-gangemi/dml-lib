@@ -87,10 +87,7 @@ export default withMermaid({
         ]
       }
     ],
-    footer: {
-      message: 'Released under the MIT License.',
-      copyright: 'Copyright © 2025-present Beyond The Cloud Sp. z o.o.'
-    },
+    footer: false,
     socialLinks: [
       { icon: 'github', link: 'https://github.com/beyond-the-cloud-dev/dml-lib' },
       {
