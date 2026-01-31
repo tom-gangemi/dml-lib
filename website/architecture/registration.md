@@ -130,78 +130,15 @@ new DML()
 // Result: 12 DML statements executed
 ```
 
-**Dependency Graph**
+**Interactive Dependency Graph**
 
-```mermaid
-graph LR
-    A1((A1))
-    A2((A2))
-    A3((A3))
-    A4((A4))
-    A5((A5))
-    A6((A6))
-    A7((A7))
-    A8((A8))
-    C1((C1))
-    C2((C2))
-    C3((C3))
-    C4((C4))
-    O1((O1))
-    O2((O2))
-    O3((O3))
-    O4((O4))
-    L1((L1))
+Use the controls below to step through the DML execution order. Watch how records are committed in layers based on their dependencies.
 
-    A2 -->|ParentId| A1
-    A4 -->|ParentId| A2
-    A5 -->|ParentId| A2
-    A3 -->|ParentId| A5
-    A6 -->|ParentId| A5
-    A7 -->|ParentId| A5
-    C1 -->|AccountId| A2
-    C2 -->|AccountId| A3
-    C3 -->|AccountId| A6
-    C4 -->|AccountId| A6
-    O1 -->|AccountId| A1
-    O2 -->|AccountId| A4
-    O3 -->|AccountId| A6
-    O4 -->|AccountId| A6
+**Legend:** A = Account, C = Contact, O = Opportunity, L = Lead
 
-    style A1 fill:#4CAF50,color:#fff
-    style A2 fill:#FF9800,color:#fff
-    style A3 fill:#607D8B,color:#fff
-    style A4 fill:#795548,color:#fff
-    style A5 fill:#00BCD4,color:#fff
-    style A6 fill:#8BC34A,color:#fff
-    style A7 fill:#8BC34A,color:#fff
-    style A8 fill:#4CAF50,color:#fff
-    style C1 fill:#2196F3,color:#fff
-    style C2 fill:#009688,color:#fff
-    style C3 fill:#009688,color:#fff
-    style C4 fill:#009688,color:#fff
-    style O1 fill:#9C27B0,color:#fff
-    style O2 fill:#E91E63,color:#fff
-    style O3 fill:#3F51B5,color:#fff
-    style O4 fill:#3F51B5,color:#fff
-    style L1 fill:#F44336,color:#fff
-```
+<DmlGraph />
 
-Despite registering 17 records, only **12 DML statements** are executed:
-
-| DML # | Operation | SObject | Records | Reason |
-|-------|-----------|---------|---------|--------|
-| <span style="display:inline-block;width:12px;height:12px;background:#4CAF50;border-radius:2px"></span> 1 | INSERT | Account | account1, account8 | No dependencies, same bucket |
-| <span style="display:inline-block;width:12px;height:12px;background:#F44336;border-radius:2px"></span> 2 | INSERT | Lead | lead1 | No dependencies |
-| <span style="display:inline-block;width:12px;height:12px;background:#FF9800;border-radius:2px"></span> 3 | UPSERT | Account | account2 | Depends on account1 (ParentId) |
-| <span style="display:inline-block;width:12px;height:12px;background:#9C27B0;border-radius:2px"></span> 4 | INSERT | Opportunity | opportunity1 | Depends on account1 (AccountId) |
-| <span style="display:inline-block;width:12px;height:12px;background:#795548;border-radius:2px"></span> 5 | UPSERT | Account | account4 | Depends on account2 (ParentId) |
-| <span style="display:inline-block;width:12px;height:12px;background:#00BCD4;border-radius:2px"></span> 6 | INSERT | Account | account5 | Depends on account2 (ParentId) |
-| <span style="display:inline-block;width:12px;height:12px;background:#2196F3;border-radius:2px"></span> 7 | INSERT | Contact | contact1 | Depends on account2 (AccountId) |
-| <span style="display:inline-block;width:12px;height:12px;background:#607D8B;border-radius:2px"></span> 8 | UPSERT | Account | account3 | Depends on account5 (ParentId) |
-| <span style="display:inline-block;width:12px;height:12px;background:#8BC34A;border-radius:2px"></span> 9 | INSERT | Account | account6, account7 | Depend on account5 (ParentId), same bucket |
-| <span style="display:inline-block;width:12px;height:12px;background:#E91E63;border-radius:2px"></span> 10 | INSERT | Opportunity | opportunity2 | Depends on account4 (AccountId) |
-| <span style="display:inline-block;width:12px;height:12px;background:#009688;border-radius:2px"></span> 11 | INSERT | Contact | contact2, contact3, contact4 | Depend on account3 and account6, same bucket |
-| <span style="display:inline-block;width:12px;height:12px;background:#3F51B5;border-radius:2px"></span> 12 | INSERT | Opportunity | opportunity3, opportunity4 | Depend on account6 (AccountId), same bucket |
+Despite registering 17 records, only **12 DML statements** are executed.
 
 ::: tip
 No matter how you register records - in any order, across multiple method calls, or with complex relationships - DML Lib guarantees the minimal number of DML statements while respecting all dependencies.
