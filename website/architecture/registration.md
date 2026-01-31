@@ -93,14 +93,14 @@ DML Lib minimizes the number of DML statements by building a dependency graph an
 
 ### How It Works
 
-1. **Graph Construction** — When you register records using `toInsert()`, `toUpdate()`, etc., each record becomes a node in a dependency graph. Relationships defined via `withRelationship()` create edges between nodes.
+1. **Graph Construction** - When you register records using `toInsert()`, `toUpdate()`, etc., each record becomes a node in a dependency graph. Relationships defined via `withRelationship()` create edges between nodes.
 
-2. **Dependency Resolution** — Kahn's algorithm (topological sort) processes the graph, ensuring parent records are committed before their dependents.
+2. **Dependency Resolution** - Kahn's algorithm (topological sort) processes the graph, ensuring parent records are committed before their dependents.
 
-3. **Bucket Assignment** — During graph resolution, records are grouped into buckets based on their operation characteristics:
-   - **Operation type** — INSERT, UPDATE, UPSERT, DELETE, UNDELETE, MERGE, PUBLISH
-   - **SObject type** — Account, Contact, Opportunity, etc.
-   - **Additional identifiers** — Upsert external ID field, merge master record ID
+3. **Bucket Assignment** - During graph resolution, records are grouped into buckets based on their operation characteristics:
+   - **Operation type** - INSERT, UPDATE, UPSERT, DELETE, UNDELETE, MERGE, PUBLISH
+   - **SObject type** - Account, Contact, Opportunity, etc.
+   - **Additional identifiers** - Upsert external ID field, merge master record ID
 
 Records sharing the same characteristics are placed in the same bucket and executed in a single DML statement.
 
