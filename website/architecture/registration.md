@@ -108,69 +108,100 @@ Records sharing the same characteristics are placed in the same bucket and execu
 
 ```apex
 new DML()
-	.toInsert(account1)
-	.toInsert(account2)
-	.toUpsert(account3)
-	.toUpsert(account4)
-	.toInsert(DML.Record(account5).withRelationship(Account.ParentId, account2))
-	.toInsert(DML.Record(contact1).withRelationship(Contact.AccountId, account2))
-	.toInsert(DML.Record(contact2).withRelationship(Contact.AccountId, account3))
-	.toInsert(opportunity1)
-	.toInsert(DML.Record(opportunity2).withRelationship(Opportunity.AccountId, account4))
-	.toInsert(lead1)
-	.commitWork();
+    .toInsert(account1)
+    .toUpsert(DML.Record(account2).withRelationship(Account.ParentId, account1))
+    .toUpsert(DML.Record(account4).withRelationship(Account.ParentId, account2))
+    .toInsert(DML.Record(account5).withRelationship(Account.ParentId, account2))
+    .toUpsert(DML.Record(account3).withRelationship(Account.ParentId, account5))
+    .toInsert(DML.Record(account6).withRelationship(Account.ParentId, account5))
+    .toInsert(DML.Record(account7).withRelationship(Account.ParentId, account5))
+    .toInsert(account8)
+    .toInsert(DML.Record(contact1).withRelationship(Contact.AccountId, account2))
+    .toInsert(DML.Record(contact2).withRelationship(Contact.AccountId, account3))
+    .toInsert(DML.Record(contact3).withRelationship(Contact.AccountId, account6))
+    .toInsert(DML.Record(contact4).withRelationship(Contact.AccountId, account6))
+    .toInsert(DML.Record(opportunity1).withRelationship(Opportunity.AccountId, account1))
+    .toInsert(DML.Record(opportunity2).withRelationship(Opportunity.AccountId, account4))
+    .toInsert(DML.Record(opportunity3).withRelationship(Opportunity.AccountId, account6))
+    .toInsert(DML.Record(opportunity4).withRelationship(Opportunity.AccountId, account6))
+    .toInsert(lead1)
+    .commitWork();
 
-// Result: 7 DML statements executed
+// Result: 12 DML statements executed
 ```
 
 **Dependency Graph**
 
 ```mermaid
 graph LR
-    subgraph "No Dependencies"
-        account1((account1))
-        account2((account2))
-        account3((account3))
-        account4((account4))
-        opportunity1((opportunity1))
-        lead1((lead1))
-    end
+    account1((account1))
+    account2((account2))
+    account3((account3))
+    account4((account4))
+    account5((account5))
+    account6((account6))
+    account7((account7))
+    account8((account8))
+    contact1((contact1))
+    contact2((contact2))
+    contact3((contact3))
+    contact4((contact4))
+    opportunity1((opportunity1))
+    opportunity2((opportunity2))
+    opportunity3((opportunity3))
+    opportunity4((opportunity4))
+    lead1((lead1))
 
-    subgraph "With Dependencies"
-        account5((account5))
-        contact1((contact1))
-        contact2((contact2))
-        opportunity2((opportunity2))
-    end
-
+    account2 -->|ParentId| account1
+    account4 -->|ParentId| account2
     account5 -->|ParentId| account2
+    account3 -->|ParentId| account5
+    account6 -->|ParentId| account5
+    account7 -->|ParentId| account5
     contact1 -->|AccountId| account2
     contact2 -->|AccountId| account3
+    contact3 -->|AccountId| account6
+    contact4 -->|AccountId| account6
+    opportunity1 -->|AccountId| account1
     opportunity2 -->|AccountId| account4
+    opportunity3 -->|AccountId| account6
+    opportunity4 -->|AccountId| account6
 
     style account1 fill:#4CAF50,color:#fff
-    style account2 fill:#4CAF50,color:#fff
-    style account3 fill:#FF9800,color:#fff
-    style account4 fill:#FF9800,color:#fff
+    style account2 fill:#FF9800,color:#fff
+    style account3 fill:#607D8B,color:#fff
+    style account4 fill:#795548,color:#fff
     style account5 fill:#00BCD4,color:#fff
+    style account6 fill:#8BC34A,color:#fff
+    style account7 fill:#8BC34A,color:#fff
+    style account8 fill:#4CAF50,color:#fff
     style contact1 fill:#2196F3,color:#fff
-    style contact2 fill:#2196F3,color:#fff
+    style contact2 fill:#009688,color:#fff
+    style contact3 fill:#009688,color:#fff
+    style contact4 fill:#009688,color:#fff
     style opportunity1 fill:#9C27B0,color:#fff
     style opportunity2 fill:#E91E63,color:#fff
+    style opportunity3 fill:#3F51B5,color:#fff
+    style opportunity4 fill:#3F51B5,color:#fff
     style lead1 fill:#F44336,color:#fff
 ```
 
-Despite registering 10 records, only **7 DML statements** are executed:
+Despite registering 17 records, only **12 DML statements** are executed:
 
 | DML # | Operation | SObject | Records | Reason |
 |-------|-----------|---------|---------|--------|
-| <span style="display:inline-block;width:12px;height:12px;background:#4CAF50;border-radius:2px"></span> 1 | INSERT | Account | account1, account2 | No dependencies, same bucket |
-| <span style="display:inline-block;width:12px;height:12px;background:#FF9800;border-radius:2px"></span> 2 | UPSERT | Account | account3, account4 | No dependencies, different operation type |
-| <span style="display:inline-block;width:12px;height:12px;background:#9C27B0;border-radius:2px"></span> 3 | INSERT | Opportunity | opportunity1 | No dependencies |
-| <span style="display:inline-block;width:12px;height:12px;background:#F44336;border-radius:2px"></span> 4 | INSERT | Lead | lead1 | No dependencies |
-| <span style="display:inline-block;width:12px;height:12px;background:#00BCD4;border-radius:2px"></span> 5 | INSERT | Account | account5 | Depends on account2 (ParentId) |
-| <span style="display:inline-block;width:12px;height:12px;background:#2196F3;border-radius:2px"></span> 6 | INSERT | Contact | contact1, contact2 | Depend on account2 and account3 |
-| <span style="display:inline-block;width:12px;height:12px;background:#E91E63;border-radius:2px"></span> 7 | INSERT | Opportunity | opportunity2 | Depends on account4 (AccountId) |
+| <span style="display:inline-block;width:12px;height:12px;background:#4CAF50;border-radius:2px"></span> 1 | INSERT | Account | account1, account8 | No dependencies, same bucket |
+| <span style="display:inline-block;width:12px;height:12px;background:#F44336;border-radius:2px"></span> 2 | INSERT | Lead | lead1 | No dependencies |
+| <span style="display:inline-block;width:12px;height:12px;background:#FF9800;border-radius:2px"></span> 3 | UPSERT | Account | account2 | Depends on account1 (ParentId) |
+| <span style="display:inline-block;width:12px;height:12px;background:#9C27B0;border-radius:2px"></span> 4 | INSERT | Opportunity | opportunity1 | Depends on account1 (AccountId) |
+| <span style="display:inline-block;width:12px;height:12px;background:#795548;border-radius:2px"></span> 5 | UPSERT | Account | account4 | Depends on account2 (ParentId) |
+| <span style="display:inline-block;width:12px;height:12px;background:#00BCD4;border-radius:2px"></span> 6 | INSERT | Account | account5 | Depends on account2 (ParentId) |
+| <span style="display:inline-block;width:12px;height:12px;background:#2196F3;border-radius:2px"></span> 7 | INSERT | Contact | contact1 | Depends on account2 (AccountId) |
+| <span style="display:inline-block;width:12px;height:12px;background:#607D8B;border-radius:2px"></span> 8 | UPSERT | Account | account3 | Depends on account5 (ParentId) |
+| <span style="display:inline-block;width:12px;height:12px;background:#8BC34A;border-radius:2px"></span> 9 | INSERT | Account | account6, account7 | Depend on account5 (ParentId), same bucket |
+| <span style="display:inline-block;width:12px;height:12px;background:#E91E63;border-radius:2px"></span> 10 | INSERT | Opportunity | opportunity2 | Depends on account4 (AccountId) |
+| <span style="display:inline-block;width:12px;height:12px;background:#009688;border-radius:2px"></span> 11 | INSERT | Contact | contact2, contact3, contact4 | Depend on account3 and account6, same bucket |
+| <span style="display:inline-block;width:12px;height:12px;background:#3F51B5;border-radius:2px"></span> 12 | INSERT | Opportunity | opportunity3, opportunity4 | Depend on account6 (AccountId), same bucket |
 
 ::: tip
 No matter how you register records - in any order, across multiple method calls, or with complex relationships - DML Lib guarantees the minimal number of DML statements while respecting all dependencies.
