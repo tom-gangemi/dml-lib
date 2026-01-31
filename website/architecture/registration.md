@@ -134,56 +134,56 @@ new DML()
 
 ```mermaid
 graph LR
-    account1((account1))
-    account2((account2))
-    account3((account3))
-    account4((account4))
-    account5((account5))
-    account6((account6))
-    account7((account7))
-    account8((account8))
-    contact1((contact1))
-    contact2((contact2))
-    contact3((contact3))
-    contact4((contact4))
-    opportunity1((opportunity1))
-    opportunity2((opportunity2))
-    opportunity3((opportunity3))
-    opportunity4((opportunity4))
-    lead1((lead1))
+    A1((A1))
+    A2((A2))
+    A3((A3))
+    A4((A4))
+    A5((A5))
+    A6((A6))
+    A7((A7))
+    A8((A8))
+    C1((C1))
+    C2((C2))
+    C3((C3))
+    C4((C4))
+    O1((O1))
+    O2((O2))
+    O3((O3))
+    O4((O4))
+    L1((L1))
 
-    account2 -->|ParentId| account1
-    account4 -->|ParentId| account2
-    account5 -->|ParentId| account2
-    account3 -->|ParentId| account5
-    account6 -->|ParentId| account5
-    account7 -->|ParentId| account5
-    contact1 -->|AccountId| account2
-    contact2 -->|AccountId| account3
-    contact3 -->|AccountId| account6
-    contact4 -->|AccountId| account6
-    opportunity1 -->|AccountId| account1
-    opportunity2 -->|AccountId| account4
-    opportunity3 -->|AccountId| account6
-    opportunity4 -->|AccountId| account6
+    A2 -->|ParentId| A1
+    A4 -->|ParentId| A2
+    A5 -->|ParentId| A2
+    A3 -->|ParentId| A5
+    A6 -->|ParentId| A5
+    A7 -->|ParentId| A5
+    C1 -->|AccountId| A2
+    C2 -->|AccountId| A3
+    C3 -->|AccountId| A6
+    C4 -->|AccountId| A6
+    O1 -->|AccountId| A1
+    O2 -->|AccountId| A4
+    O3 -->|AccountId| A6
+    O4 -->|AccountId| A6
 
-    style account1 fill:#4CAF50,color:#fff
-    style account2 fill:#FF9800,color:#fff
-    style account3 fill:#607D8B,color:#fff
-    style account4 fill:#795548,color:#fff
-    style account5 fill:#00BCD4,color:#fff
-    style account6 fill:#8BC34A,color:#fff
-    style account7 fill:#8BC34A,color:#fff
-    style account8 fill:#4CAF50,color:#fff
-    style contact1 fill:#2196F3,color:#fff
-    style contact2 fill:#009688,color:#fff
-    style contact3 fill:#009688,color:#fff
-    style contact4 fill:#009688,color:#fff
-    style opportunity1 fill:#9C27B0,color:#fff
-    style opportunity2 fill:#E91E63,color:#fff
-    style opportunity3 fill:#3F51B5,color:#fff
-    style opportunity4 fill:#3F51B5,color:#fff
-    style lead1 fill:#F44336,color:#fff
+    style A1 fill:#4CAF50,color:#fff
+    style A2 fill:#FF9800,color:#fff
+    style A3 fill:#607D8B,color:#fff
+    style A4 fill:#795548,color:#fff
+    style A5 fill:#00BCD4,color:#fff
+    style A6 fill:#8BC34A,color:#fff
+    style A7 fill:#8BC34A,color:#fff
+    style A8 fill:#4CAF50,color:#fff
+    style C1 fill:#2196F3,color:#fff
+    style C2 fill:#009688,color:#fff
+    style C3 fill:#009688,color:#fff
+    style C4 fill:#009688,color:#fff
+    style O1 fill:#9C27B0,color:#fff
+    style O2 fill:#E91E63,color:#fff
+    style O3 fill:#3F51B5,color:#fff
+    style O4 fill:#3F51B5,color:#fff
+    style L1 fill:#F44336,color:#fff
 ```
 
 Despite registering 17 records, only **12 DML statements** are executed:
